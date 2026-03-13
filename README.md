@@ -1,9 +1,26 @@
-# 📊 BudgetPlanner - Dein persönlicher Budget-Manager in Python
+# 📊 Budgetplanner - Dein persönlicher Budget-Manager in Python
 
-Kurze Beschreibung der Anwendung
+Der Budgetplanner ist eine Anwendung zur Verwaltung persönlicher Finanzen. 
+-> Beschreibung fertig formulieren 
+
+Ziel des Projekts ist es, eine einfache und übersichtliche Lösung zu entwickeln, 
+mit der persönliche Finanzdaten strukturiert verwaltet und ausgewertet werden können.
 
 ## 🛠 Funktionen
 
+### Geplante Funktionen
+- Einnahmen hinzufügen
+- Ausgaben hinzufügen
+- Kategorien für Ausgaben erstellen
+- Monatsübersicht
+- Übersicht über Einnahmen und Ausgaben
+- Budgetübersicht pro Monat
+
+## 📑 Anforderungen / User Stories
+
+Die detaillierten Anforderungen und User Stories befinden sich in:
+
+docs/user_stories.md
 
 ## 💻 Bedienung
 
@@ -14,13 +31,12 @@ Kurze Beschreibung der Anwendung
 ## ⚙️ Projektstruktur
 
 ```
-Programmierprojekt_BudgetPlanner_Gruppe4/
-├── budgetplanner/
-│   └── main.py                 # Hauptmenü und Ablaufsteuerung
+Programmierprojekt_BudgetPlanner/
+├── app.py                      # Startpunkt der Anwendung
+├── budgetplanner/              # Ordner für Programmlogik und Module
 ├── docs/
-│   └── projektidee.md          # Dokumentation
-├── README.md                   # Projektbeschreibung 
-└── .gitignore                  # Schliesst Sicherungen und temporäre Dateien vom Repository aus
+│   └── user_stories.md         # Anforderungen und User Stories
+└── README.md                   # Projektdokumentation
 ```
 
 ## 📂 Installation und Start
