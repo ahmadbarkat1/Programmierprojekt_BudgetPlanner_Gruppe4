@@ -18,12 +18,15 @@ mit der persönliche Finanzdaten strukturiert verwaltet und ausgewertet werden k
 - Fehlende Struktur bei der persönlichen Finanzplanung  
 
 ### ✅ Lösung
-- Zentrale Erfassung aller Einnahmen und Ausgaben  
+- Zentrale Erfassung aller Einnahmen und Ausgaben
 - Zuordnung der Einträge zu Kategorien  
 - Anzeige des aktuellen Finanzstands  
 - Darstellung des verbleibenden Budgets  
 - Warnung bei Überschreitung des Budgets  
 - Bessere Kontrolle über monatliche Ausgaben  
+
+## 📂 Installation und Start
+FEHLT NOCH
 
 ## 🛠 Funktionen
 
@@ -34,15 +37,19 @@ mit der persönliche Finanzdaten strukturiert verwaltet und ausgewertet werden k
 - Kontenübersicht  
 - Vermögensverwaltung  
 - Monatliches Budget festlegen  
-- Übersicht über Einnahmen und Ausgaben anzeigen  
+- Übersicht über Einnahmen und Ausgaben anzeigen
 - Verbleibendes Budget berechnen  
 - Warnung bei Budgetüberschreitung  
+
+---
 
 ## 📑 Anforderungen / User Stories
 
 Die detaillierten Anforderungen, inklusive User Stories, Datentypen, Inputs und Outputs, befinden sich in:
 
 docs/user_stories.md  
+
+---
 
 ## 💻 Bedienung
 
@@ -72,18 +79,16 @@ Programmierprojekt_BudgetPlanner/
 └── README.md                   # Projektdokumentation
 ```
 
-## 📂 Installation und Start
-FEHLT NOCH
-
 ## 📝 Autoren
 - Sven Birrer 
 - Lorik Kele
 - Ahmad Barkat
 
+---
+
 ## 📜 Lizenz
 Dieses Projekt wird im Rahmen eines Schulprojekts erstellt.
 
-## ⚠️ Hinweise
-FEHLT NOCH
+---
 
 ## 💸 Viel Erfolg beim Planen!
