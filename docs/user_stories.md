@@ -1,4 +1,4 @@
-# User Stories, Data Types, Inputs, and Expected Outputs
+# User Stories, Datentypen, Eingaben und erwartete Ausgaben
 
 ---
 
@@ -16,7 +16,7 @@
 
 ---
 
-## 🗂 Data Types
+## 🗂 Datentypen
 
 ### Transaction
 - id: int
@@ -43,7 +43,7 @@
 
 ---
 
-## ⌨️ Inputs
+## ⌨️ Eingaben
 
 ### Einnahme erfassen
 - Betrag
@@ -72,7 +72,7 @@
 
 ---
 
-## 📤 Expected Outputs
+## 📤 Erwartete Ausgaben
 
 ### Einnahme / Ausgabe
 - Speicherung in der Datenbank
