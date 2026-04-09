@@ -7,7 +7,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_001
 
 | **Feld**                   | **Details**                                                                                          |
-| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| :------------------------- | :-------------------------------------------------------------------------------------------------- |
 | **Testfall-ID**            | TC_001                                                                                               |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer eine Einnahme erfassen kann                                            |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Einnahmeformular zugänglich                                                 |
@@ -23,7 +23,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_002
 
 | **Feld**                   | **Details**                                                                                          |
-| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| :------------------------- | :-------------------------------------------------------------------------------------------------- |
 | **Testfall-ID**            | TC_002                                                                                               |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer eine Ausgabe erfassen kann                                             |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Ausgabeforumular zugänglich                                                 |
@@ -39,7 +39,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_003
 
 | **Feld**                   | **Details**                                                           |
-| -------------------------- | --------------------------------------------------------------------- |
+| :------------------------- | :------------------------------------------------------------------- |
 | **Testfall-ID**            | TC_003                                                                |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer eine neue Kategorie erstellen kann      |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Kategorieverwaltung zugänglich               |
@@ -55,7 +55,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_004
 
 | **Feld**                   | **Details**                                                          |
-| -------------------------- | -------------------------------------------------------------------- |
+| :------------------------- | :------------------------------------------------------------------ |
 | **Testfall-ID**            | TC_004                                                               |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer ein monatliches Budget festlegen kann  |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Budgetformular zugänglich                   |
@@ -71,7 +71,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_005
 
 | **Feld**                   | **Details**                                                      |
-| -------------------------- | ---------------------------------------------------------------- |
+| :------------------------- | :---------------------------------------------------------------- |
 | **Testfall-ID**            | TC_005                                                           |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer das verbleibende Budget sehen kann |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Budget existiert                        |
@@ -87,7 +87,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_006
 
 | **Feld**                   | **Details**                                                      |
-| -------------------------- | ---------------------------------------------------------------- |
+| :------------------------- | :---------------------------------------------------------------- |
 | **Testfall-ID**            | TC_006                                                           |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer eine Kontenübersicht anzeigen kann |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Konten existieren                       |
@@ -103,7 +103,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_007
 
 | **Feld**                   | **Details**                                                                                                                    |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
 | **Testfall-ID**            | TC_007                                                                                                                         |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer wiederkehrende Einnahmen erfassen kann                                                           |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Formular für wiederkehrende Einnahmen zugänglich                                                      |
@@ -119,7 +119,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_008
 
 | **Feld**                   | **Details**                                                                                                            |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| :------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
 | **Testfall-ID**            | TC_008                                                                                                                 |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer wiederkehrende Ausgaben erfassen kann                                                    |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Formular für wiederkehrende Ausgaben zugänglich                                               |
@@ -135,7 +135,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_009
 
 | **Feld**                   | **Details**                                        |
-| -------------------------- | -------------------------------------------------- |
+| :------------------------- | :------------------------------------------------ |
 | **Testfall-ID**            | TC_009                                             |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer Daten speichern kann |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Daten erfasst             |
@@ -151,7 +151,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_010
 
 | **Feld**                   | **Details**                                                         |
-| -------------------------- | ------------------------------------------------------------------- |
+| :------------------------- | :----------------------------------------------------------------- |
 | **Testfall-ID**            | TC_010                                                              |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer bei Budgetüberschreitung gewarnt wird |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Budget existiert; Ausgaben > Budget        |
@@ -167,7 +167,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_011
 
 | **Feld**                   | **Details**                                                  |
-| -------------------------- | ------------------------------------------------------------ |
+| :------------------------- | :------------------------------------------------------------ |
 | **Testfall-ID**            | TC_011                                                       |
 | **Titel/Beschreibung**     | Überprüfen, dass die Gesamtausgaben korrekt angezeigt werden |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Ausgaben erfasst                    |
@@ -183,7 +183,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_012
 
 | **Feld**                   | **Details**                                                   |
-| -------------------------- | ------------------------------------------------------------- |
+| :------------------------- | :------------------------------------------------------------- |
 | **Testfall-ID**            | TC_012                                                        |
 | **Titel/Beschreibung**     | Überprüfen, dass die Gesamteinnahmen korrekt angezeigt werden |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Einnahmen erfasst                    |
@@ -198,24 +198,24 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 
 ## Testfall TC_013
 
-| **Feld**                   | **Details**                                             |
-| -------------------------- | ------------------------------------------------------- |
-| **Testfall-ID**            | TC_013                                                  |
-| **Titel/Beschreibung**     | Überprüfen, dass Kontostand korrekt berechnet wird      |
-| **Voraussetzungen**        | Benutzer ist eingeloggt; Einnahmen und Ausgaben erfasst |
-| **Testschritte**           | Finanzübersicht öffnen                                  |
-| **Testdaten/Eingaben**     | –                                                       |
-| **Erwartetes Ergebnis**    | Kontostand = Einnahmen – Ausgaben                       |
-| **Tatsächliches Ergebnis** | Kontostand korrekt berechnet                            |
-| **Status**                 | Pass                                                    |
-| **Kommentare**             | Keine Probleme                                          |
+| **Feld**                   | **Details**                                                     |
+| :------------------------- | :--------------------------------------------------------------- |
+| **Testfall-ID**            | TC_013                                                          |
+| **Titel/Beschreibung**     | Überprüfen, dass Kontostand korrekt berechnet wird              |
+| **Voraussetzungen**        | Benutzer ist eingeloggt; Einnahmen und Ausgaben erfasst         |
+| **Testschritte**           | Finanzübersicht öffnen                                          |
+| **Testdaten/Eingaben**     | –                                                               |
+| **Erwartetes Ergebnis**    | Kontostand = Einnahmen – Ausgaben                                |
+| **Tatsächliches Ergebnis** | Kontostand korrekt berechnet                                     |
+| **Status**                 | Pass                                                            |
+| **Kommentare**             | Keine Probleme                                                   |
 
 ---
 
 ## Testfall TC_014
 
 | **Feld**                   | **Details**                                                        |
-| -------------------------- | ------------------------------------------------------------------ |
+| :------------------------- | :----------------------------------------------------------------- |
 | **Testfall-ID**            | TC_014                                                             |
 | **Titel/Beschreibung**     | Überprüfen, dass ein Benutzer mehrere Konten verwalten kann        |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; mehrere Konten existieren                 |
@@ -231,7 +231,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_015
 
 | **Feld**                   | **Details**                                            |
-| -------------------------- | ------------------------------------------------------ |
+| :------------------------- | :---------------------------------------------------- |
 | **Testfall-ID**            | TC_015                                                 |
 | **Titel/Beschreibung**     | Überprüfen, dass Kategorienamen geändert werden können |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Kategorie existiert           |
@@ -247,7 +247,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_016
 
 | **Feld**                   | **Details**                                        |
-| -------------------------- | -------------------------------------------------- |
+| :------------------------- | :------------------------------------------------ |
 | **Testfall-ID**            | TC_016                                             |
 | **Titel/Beschreibung**     | Überprüfen, dass Kategorien gelöscht werden können |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Kategorie existiert       |
@@ -263,23 +263,23 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_017
 
 | **Feld**                   | **Details**                                                      |
-| -------------------------- | ---------------------------------------------------------------- |
+| :------------------------- | :---------------------------------------------------------------- |
 | **Testfall-ID**            | TC_017                                                           |
 | **Titel/Beschreibung**     | Überprüfen, dass Ausgaben nach Kategorie gefiltert werden können |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Ausgaben erfasst                        |
 | **Testschritte**           | Filter öffnen → Kategorie auswählen → Anzeigen klicken           |
 | **Testdaten/Eingaben**     | Kategorie: Miete                                                 |
 | **Erwartetes Ergebnis**    | Nur Ausgaben der Kategorie angezeigt                             |
-| **Tatsächliches Ergebnis** | Filter korrekt angewendet                                        |
-| **Status**                 | Pass                                                             |
-| **Kommentare**             | Keine Probleme                                                   |
+| **Tatsächliches Ergebnis** | Filter korrekt angewendet                                         |
+| **Status**                 | Pass                                                              |
+| **Kommentare**             | Keine Probleme                                                    |
 
 ---
 
 ## Testfall TC_018
 
 | **Feld**                   | **Details**                                                   |
-| -------------------------- | ------------------------------------------------------------- |
+| :------------------------- | :------------------------------------------------------------- |
 | **Testfall-ID**            | TC_018                                                        |
 | **Titel/Beschreibung**     | Überprüfen, dass Einnahmen nach Monat gefiltert werden können |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Einnahmen erfasst                    |
@@ -295,7 +295,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_019
 
 | **Feld**                   | **Details**                                             |
-| -------------------------- | ------------------------------------------------------- |
+| :------------------------- | :------------------------------------------------------- |
 | **Testfall-ID**            | TC_019                                                  |
 | **Titel/Beschreibung**     | Überprüfen, dass das Löschen von Einnahmen funktioniert |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Einnahme existiert             |
@@ -311,7 +311,7 @@ Dieses Dokument enthält die Testfälle für den Budgetplanner, um sicherzustell
 ## Testfall TC_020
 
 | **Feld**                   | **Details**                                            |
-| -------------------------- | ------------------------------------------------------ |
+| :------------------------- | :------------------------------------------------------ |
 | **Testfall-ID**            | TC_020                                                 |
 | **Titel/Beschreibung**     | Überprüfen, dass das Löschen von Ausgaben funktioniert |
 | **Voraussetzungen**        | Benutzer ist eingeloggt; Ausgabe existiert             |
