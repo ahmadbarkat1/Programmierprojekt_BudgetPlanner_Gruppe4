@@ -34,18 +34,38 @@ FEHLT NOCH
 
 ---
 
-## 🛠 Funktionen
+## 🛠 Funktionen und Features
 
-### Geplante Funktionen
-- Einnahmen erfassen z. B. Lohn, Nebenverdienst
-- Ausgaben erfassen z. B. Fixkosten, Rechnungen, variable Kosten
-- Kategorien verwalten  
-- Kontenübersicht  
-- Vermögensverwaltung  
-- Monatliches Budget festlegen  
-- Übersicht über Einnahmen und Ausgaben anzeigen
-- Verbleibendes Budget berechnen  
-- Warnung bei Budgetüberschreitung  
+### Muss-Anforderungen
+
+- Erfassung von Einnahmen
+- Erfassung von Ausgaben
+- Verwaltung von Kategorien
+- Anzeige einer Finanzübersicht
+- Festlegung eines monatlichen Budgets
+- Berechnung des verbleibenden Budgets
+- Warnung bei Budgetüberschreitung
+- Speicherung aller Daten in einer Datenbank
+- Verwaltung mehrerer Konten
+
+### Soll-Anforderungen
+
+- Filterfunktion nach Monat, Kategorie oder Konto
+- Diagramme zur Visualisierung
+- Wiederkehrende Einnahmen und Ausgaben
+- Vergleich zwischen Monaten
+- Sparziele definieren und verfolgen
+- Exportfunktion
+- Benutzerlogin
+
+### Kann-Anforderungen
+
+- Automatische Analyse ungewöhnlicher Ausgaben
+- Steuerübersicht
+- Individuelle Budgetlimits pro Kategorie
+- Monatsberichte mit Zusammenfassung
+- Dark Mode / UI-Anpassungen
+ 
 
 ---
 
