@@ -8,6 +8,8 @@ klare Übersicht über seine finanzielle Situation und kann sein Budget gezielt 
 Ziel des Projekts ist es, eine einfache und übersichtliche Lösung zu entwickeln, 
 mit der persönliche Finanzdaten strukturiert verwaltet und ausgewertet werden können.
 
+---
+
 ## 📌 Projektbeschreibung
 
 ### 💡 Problemstellung
@@ -25,8 +27,12 @@ mit der persönliche Finanzdaten strukturiert verwaltet und ausgewertet werden k
 - Warnung bei Überschreitung des Budgets  
 - Bessere Kontrolle über monatliche Ausgaben  
 
+---
+
 ## 📂 Installation und Start
 FEHLT NOCH
+
+---
 
 ## 🛠 Funktionen
 
@@ -78,6 +84,7 @@ Programmierprojekt_BudgetPlanner/
 │   └── user_stories.md         # Anforderungen und User Stories
 └── README.md                   # Projektdokumentation
 ```
+---
 
 ## 📝 Autoren
 - Sven Birrer 
