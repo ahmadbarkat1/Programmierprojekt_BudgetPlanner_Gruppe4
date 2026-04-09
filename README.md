@@ -36,7 +36,7 @@ FEHLT NOCH
 
 ## 🛠 Funktionen und Features
 
-### Muss-Anforderungen
+### Muss-Funktionen
 
 - Erfassung von Einnahmen
 - Erfassung von Ausgaben
@@ -48,7 +48,7 @@ FEHLT NOCH
 - Speicherung aller Daten in einer Datenbank
 - Verwaltung mehrerer Konten
 
-### Soll-Anforderungen
+### Soll-Funktionen
 
 - Filterfunktion nach Monat, Kategorie oder Konto
 - Diagramme zur Visualisierung
@@ -58,7 +58,7 @@ FEHLT NOCH
 - Exportfunktion
 - Benutzerlogin
 
-### Kann-Anforderungen
+### Kann-Funktionen
 
 - Automatische Analyse ungewöhnlicher Ausgaben
 - Steuerübersicht
@@ -97,12 +97,13 @@ sich eine Übersicht über seine finanzielle Situation anzeigen lassen.
 ## ⚙️ Projektstruktur
 
 ```
-Programmierprojekt_BudgetPlanner/
-├── app.py                      # Startpunkt der Anwendung
-├── budgetplanner/              # Ordner für Programmlogik und Module
+Programmierprojekt_BudgetPlanner_Gruppe4/
+├── app.py                         # Startpunkt der Anwendung
+├── budgetplanner/                 # Programmlogik und Module
 ├── docs/
-│   └── user_stories.md         # Anforderungen und User Stories
-└── README.md                   # Projektdokumentation
+│   ├── user_stories.md            # User Stories inkl. Datentypen, Input und Output
+│   └── test_cases.md              # Alle definierten Testfälle (TC_001 – TC_020)
+└── README.md                      # Projektdokumentation
 ```
 ---
 
