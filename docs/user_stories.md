@@ -1,144 +1,99 @@
-**Eingaben**
-- Kontoname
-- Kontotyp
-- Startsaldo
-- Währung
-
-**Validierungen**
-- Kontoname darf nicht leer sein
-- Startsaldo muss numerisch sein
-- Währung darf nicht leer sein
-
-**Erwartete Ausgaben**
-- Konto wird gespeichert
-- Aktueller Kontostand wird angezeigt
-- Kontenübersicht mit allen verfügbaren Mitteln
-- Buchungen können einem Konto zugeordnet werden
-
-**Betroffene Datentypen**
-- Konto
-- Einnahme
-- Ausgabe
+# User Stories, Data Types, Inputs, and Expected Outputs
 
 ---
 
-## 5. Typische Eingabeformulare
+## 🧑‍💻 User Stories
 
-### Formular Einnahme
-- Titel
+- Als Benutzer möchte ich Einnahmen erfassen, damit ich mein verfügbares Geld sehe.
+- Als Benutzer möchte ich Ausgaben erfassen, damit ich meine Kosten nachvollziehen kann.
+- Als Benutzer möchte ich Kategorien verwalten, damit meine Einträge übersichtlich bleiben.
+- Als Benutzer möchte ich eine Finanzübersicht sehen, damit ich meinen aktuellen Stand erkenne.
+- Als Benutzer möchte ich ein monatliches Budget festlegen, damit ich meine Ausgaben kontrollieren kann.
+- Als Benutzer möchte ich mein verbleibendes Budget sehen, damit ich weiss, wie viel ich noch ausgeben kann.
+- Als Benutzer möchte ich gewarnt werden, wenn mein Budget überschritten wird.
+- Als Benutzer möchte ich mehrere Konten verwalten, damit ich den Überblick über meine Finanzen behalte.
+- Als Benutzer möchte ich meine Daten speichern, damit nichts verloren geht.
+
+---
+
+## 🗂 Data Types
+
+### Transaction
+- id: int
+- amount: float
+- date: date
+- category_id: int
+- account_id: int
+- description: string
+- type: string (income / expense)
+
+### Category
+- id: int
+- name: string
+
+### Budget
+- id: int
+- month: string
+- limit: float
+
+### Account
+- id: int
+- name: string
+- balance: float
+
+---
+
+## ⌨️ Inputs
+
+### Einnahme erfassen
 - Betrag
 - Datum
 - Kategorie
 - Konto
 - Beschreibung
-- Wiederkehrend
 
-### Formular Ausgabe
-- Titel
+### Ausgabe erfassen
 - Betrag
 - Datum
 - Kategorie
 - Konto
-- Ausgabenart
 - Beschreibung
-- Wiederkehrend
 
-### Formular Budget
+### Kategorie erstellen
+- Name
+
+### Budget festlegen
 - Monat
-- Jahr
 - Budgetbetrag
-- Warnschwelle
 
-### Formular Kategorie
-- Name
-- Typ
-- Beschreibung
-
-### Formular Konto
-- Name
-- Kontotyp
+### Konto erstellen
+- Kontoname
 - Startsaldo
-- Währung
-
-### Formular Vermögenswert
-- Name
-- Typ
-- Wert
-- Bewertungsdatum
-- Beschreibung
 
 ---
 
-## 6. Erwartete Ausgaben der Anwendung
+## 📤 Expected Outputs
 
-Die Anwendung soll insbesondere folgende Ausgaben bzw. Sichten bereitstellen:
+### Einnahme / Ausgabe
+- Speicherung in der Datenbank
+- Aktualisierte Finanzübersicht
+- Aktualisierter Kontostand
 
-### Dashboard / Startseite
-- aktueller Monat
-- gesamte Einnahmen
-- gesamte Ausgaben
-- Restbudget
-- Budgetstatus
-- Kontostände
-- letzte Buchungen
+### Kategorie
+- Neue Kategorie ist auswählbar
 
-### Listenansichten
-- Liste aller Einnahmen
-- Liste aller Ausgaben
-- Filter nach Monat, Konto, Kategorie
-- Sortierung nach Datum oder Betrag
+### Budget
+- Anzeige des verbleibenden Budgets
+- Vergleich zwischen Ausgaben und Budget
 
-### Auswertungen
-- Ausgaben pro Kategorie
-- Fixkosten vs. variable Kosten
-- Monatsvergleich
-- Budgetverbrauch in Prozent
-- optionale grafische Darstellung
+### Finanzübersicht
+- Gesamteinnahmen
+- Gesamtausgaben
+- Aktueller Kontostand
+- Verbleibendes Budget
 
-### Warnungen / Meldungen
-- Eingabe erfolgreich gespeichert
-- ungültige Eingabe
-- Budget fast aufgebraucht
-- Budget überschritten
-- Fehler beim Speichern
+### Warnung
+- Hinweis bei Budgetüberschreitung
 
----
-
-## 7. Nicht-funktionale Anforderungen
-
-- Die Anwendung läuft browserbasiert mit NiceGUI.
-- Die Geschäftslogik wird objektorientiert in Python umgesetzt.
-- Die Daten werden über SQLAlchemy mit einer Datenbank verbunden.
-- Eingaben sollen validiert und verständlich rückgemeldet werden.
-- Die Oberfläche soll einfach, übersichtlich und alltagstauglich sein.
-- Die Struktur des Projekts soll modular und erweiterbar bleiben.
-
----
-
-## 8. Abgrenzung MVP vs. spätere Ausbaustufen
-
-### Zuerst umsetzen
-- Einnahmen
-- Ausgaben
-- Kategorien
-- Konten
-- Monatsbudget
-- Finanzübersicht
-- Datenbankspeicherung
-- Budgetwarnung
-
-### Danach sinnvoll erweiterbar
-- Diagramme
-- Sparziele
-- wiederkehrende Buchungen
-- Export
-- Benutzerlogin
-- Steuerübersicht
-- Monatsvergleich
-
----
-
-## 9. Kurzfazit
-
-Mit diesen User Stories ist der Projektumfang für den aktuellen Meilenstein klar beschrieben.  
-Die Anforderungen decken die geplanten Hauptfunktionen ab und bilden eine gute Grundlage für die nächsten Schritte wie Testfälle, UML-Klassendiagramm, ER-Modell und ORM-Entitäten.
+### Konto
+- Anzeige des aktuellen Kontostands
