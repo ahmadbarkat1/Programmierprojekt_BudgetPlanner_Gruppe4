@@ -1,0 +1,2 @@
+"""Budgetplanner application package."""
+
