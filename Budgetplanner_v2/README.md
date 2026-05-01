@@ -128,3 +128,14 @@ Die wichtigsten Codepfade fuer die Erklaerung:
 - `budget_app/services/budget_service.py`: Budgetstatus und Budgetueberschreitung
 - `budget_app/ui/pages.py`: NiceGUI-Oberflaeche
 
+## ORM Umsetzung
+
+Das Datenmodell wird mit SQLModel als ORM umgesetzt.
+
+- Jede Klasse entspricht einer Datenbanktabelle
+- Beziehungen werden über Foreign Keys definiert
+- Navigation erfolgt über Relationship()
+
+Beispiel:
+- account_id verbindet Transaction mit Account
+- Relationship erlaubt Zugriff auf das ganze Objekt
