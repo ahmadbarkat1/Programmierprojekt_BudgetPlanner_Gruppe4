@@ -72,6 +72,9 @@ class FinanceController:
     def list_recent_transactions(self, limit: int = 200) -> List[Transaction]:
         return self.transaction_service.list_recent(limit=limit)
 
+    def list_budgets(self, year: int | None = None, month: int | None = None) -> List[Budget]:
+        return self.budget_service.list_budgets(self.default_user().id, year=year, month=month)
+
     def create_account(self, name: str, account_type: str, starting_balance_chf: float) -> Account:
         return self.account_service.create_account(
             name=name,
@@ -113,4 +116,3 @@ class FinanceController:
             user_id=self.default_user().id,
             category_id=category_id,
         )
-
