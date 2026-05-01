@@ -60,6 +60,7 @@ class BudgetPlannerApplication:
             transaction_dao=self.transaction_dao,
             account_dao=self.account_dao,
             category_dao=self.category_dao,
+            budget_dao=self.budget_dao,
         )
         self.budget_service = BudgetService(
             budget_dao=self.budget_dao,

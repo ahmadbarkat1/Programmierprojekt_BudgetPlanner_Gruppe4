@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import List, Optional
 
-from ..data_access.dao import AccountDAO, CategoryDAO, TransactionDAO
+from ..data_access.dao import AccountDAO, BudgetDAO, CategoryDAO, TransactionDAO
 from ..domain.models import Transaction
 
 
@@ -19,10 +19,41 @@ class TransactionService:
         transaction_dao: TransactionDAO,
         account_dao: AccountDAO,
         category_dao: CategoryDAO,
+        budget_dao: BudgetDAO | None = None,
     ) -> None:
         self.transaction_dao = transaction_dao
         self.account_dao = account_dao
         self.category_dao = category_dao
+        self.budget_dao = budget_dao
+
+    def _validate_transaction(
+        self,
+        amount_chf: float,
+        transaction_type: str,
+        transaction_date: date,
+        account_id: int,
+        category_id: int,
+    ) -> None:
+        if amount_chf <= 0:
+            raise ValueError("Der Betrag muss größer als 0 sein.")
+        if transaction_type not in self.VALID_TYPES:
+            raise ValueError("Transaktionstyp muss 'income' oder 'expense' sein.")
+        if self.account_dao.get_by_id(account_id) is None:
+            raise ValueError("Das ausgewählte Konto existiert nicht.")
+        category = self.category_dao.get_by_id(category_id)
+        if category is None:
+            raise ValueError("Die ausgewählte Kategorie existiert nicht.")
+        if category.category_type != transaction_type:
+            raise ValueError("Die ausgewählte Kategorie passt nicht zum Transaktionstyp.")
+        if transaction_type == "expense" and self.budget_dao is not None:
+            budget = self.budget_dao.get_by_category_month(
+                category.user_id,
+                category_id,
+                transaction_date.year,
+                transaction_date.month,
+            )
+            if budget is None:
+                raise ValueError("Erfasse zuerst ein Budget für diese Kategorie.")
 
     def create_transaction(
         self,
@@ -33,14 +64,7 @@ class TransactionService:
         account_id: int,
         category_id: int,
     ) -> Transaction:
-        if amount_chf <= 0:
-            raise ValueError("Der Betrag muss groesser als 0 sein.")
-        if transaction_type not in self.VALID_TYPES:
-            raise ValueError("Transaktionstyp muss 'income' oder 'expense' sein.")
-        if self.account_dao.get_by_id(account_id) is None:
-            raise ValueError("Das ausgewaehlte Konto existiert nicht.")
-        if self.category_dao.get_by_id(category_id) is None:
-            raise ValueError("Die ausgewaehlte Kategorie existiert nicht.")
+        self._validate_transaction(amount_chf, transaction_type, transaction_date, account_id, category_id)
 
         transaction = Transaction(
             amount_chf=round(float(amount_chf), 2),
@@ -52,6 +76,30 @@ class TransactionService:
         )
         return self.transaction_dao.create(transaction)
 
+    def update_transaction(
+        self,
+        transaction_id: int,
+        amount_chf: float,
+        transaction_type: str,
+        transaction_date: date,
+        description: str,
+        account_id: int,
+        category_id: int,
+    ) -> Transaction:
+        self._validate_transaction(amount_chf, transaction_type, transaction_date, account_id, category_id)
+        return self.transaction_dao.update(
+            transaction_id=transaction_id,
+            amount_chf=round(float(amount_chf), 2),
+            transaction_type=transaction_type,
+            transaction_date=transaction_date,
+            description=description.strip(),
+            account_id=account_id,
+            category_id=category_id,
+        )
+
+    def delete_transaction(self, transaction_id: int) -> None:
+        self.transaction_dao.delete(transaction_id)
+
     def list_recent(self, limit: int = 200) -> List[Transaction]:
         return self.transaction_dao.list_recent(limit=limit)
 
@@ -59,4 +107,3 @@ class TransactionService:
         if month < 1 or month > 12:
             raise ValueError("Monat muss zwischen 1 und 12 liegen.")
         return self.transaction_dao.list_for_month(year=year, month=month, user_id=user_id)
-

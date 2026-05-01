@@ -90,6 +90,12 @@ class FinanceController:
             user_id=self.default_user().id,
         )
 
+    def update_category(self, category_id: int, name: str, category_type: str) -> Category:
+        return self.category_service.update_category(category_id, name=name, category_type=category_type)
+
+    def delete_category(self, category_id: int) -> None:
+        self.category_service.delete_category(category_id)
+
     def create_transaction(
         self,
         amount_chf: float,
@@ -107,6 +113,29 @@ class FinanceController:
             account_id=account_id,
             category_id=category_id,
         )
+
+    def update_transaction(
+        self,
+        transaction_id: int,
+        amount_chf: float,
+        transaction_type: str,
+        transaction_date: date,
+        description: str,
+        account_id: int,
+        category_id: int,
+    ) -> Transaction:
+        return self.transaction_service.update_transaction(
+            transaction_id=transaction_id,
+            amount_chf=amount_chf,
+            transaction_type=transaction_type,
+            transaction_date=transaction_date,
+            description=description,
+            account_id=account_id,
+            category_id=category_id,
+        )
+
+    def delete_transaction(self, transaction_id: int) -> None:
+        self.transaction_service.delete_transaction(transaction_id)
 
     def create_budget(self, month: int, year: int, limit_chf: float, category_id: int) -> Budget:
         return self.budget_service.create_budget(

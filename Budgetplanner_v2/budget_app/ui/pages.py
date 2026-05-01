@@ -12,7 +12,7 @@ from typing import Callable
 
 from nicegui import ui
 
-from ..domain.models import Account, Category, Transaction
+from ..domain.models import Account, Budget, Category, Transaction
 from .controllers import FinanceController
 
 
@@ -26,10 +26,25 @@ class Pages:
         controller = self._finance_controller
 
         def money(value: float) -> str:
-            return f"CHF {value:,.2f}".replace(",", "'")
+            return f"CHF {value:,.2f}".replace(",", "’")
 
         def month_label(year: int, month: int) -> str:
-            return date(year, month, 1).strftime("%m/%Y")
+            return date(year, month, 1).strftime("%m.%Y")
+
+        def parse_float(value: object, field_name: str) -> float:
+            text = str(value or "").strip().replace("’", "").replace("'", "").replace(",", ".")
+            if not text:
+                raise ValueError(f"Bitte {field_name} erfassen.")
+            return float(text)
+
+        def parse_int(value: object, field_name: str) -> int:
+            text = str(value or "").strip()
+            if not text:
+                raise ValueError(f"Bitte {field_name} erfassen.")
+            return int(text)
+
+        def number_input(label: str, placeholder: str = ""):
+            return ui.input(label, placeholder=placeholder).props("inputmode=decimal").classes("w-full")
 
         def month_name(year: int, month: int) -> str:
             month_names = [
@@ -102,13 +117,17 @@ class Pages:
                     .bp-card-hover { transition: box-shadow 160ms ease, transform 160ms ease; }
                     .bp-card-hover:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10); transform: translateY(-1px); }
                     .bp-muted { color: #6b7280; }
-                    .bp-title { font-size: 24px; line-height: 32px; font-weight: 700; color: #111827; }
-                    .bp-section-title { font-size: 18px; line-height: 28px; font-weight: 600; color: #111827; }
+                    .bp-title { font-size: 28px; line-height: 36px; font-weight: 700; color: #111827; }
+                    .bp-section-title { font-size: 21px; line-height: 30px; font-weight: 600; color: #111827; }
+                    .bp-page, .bp-card, .q-field, .q-table, .q-btn { font-size: 16px; }
+                    .q-field__label, .q-table th { font-size: 14px; }
+                    .q-btn { font-weight: 600; }
                     .bp-table .q-table__top, .bp-table thead tr { background: #f9fafb; }
-                    .bp-table th { color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+                    .bp-table th { color: #6b7280; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
                     .bp-positive { color: #16a34a; }
                     .bp-negative { color: #dc2626; }
                     .bp-blue { color: #2563eb; }
+                    .bp-money { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
                     .bp-pill { border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
                     .bp-income-pill { background: #dcfce7; color: #166534; }
                     .bp-expense-pill { background: #fee2e2; color: #991b1b; }
@@ -116,6 +135,9 @@ class Pages:
                     .bp-secondary-btn { background: #e5e7eb; color: #374151; border-radius: 8px; }
                     .bp-table tbody tr:hover { background: #f9fafb; }
                     .bp-table .q-table__card { box-shadow: none; }
+                    input::-webkit-outer-spin-button,
+                    input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+                    input[type=number] { -moz-appearance: textfield; }
                     @media (max-width: 700px) {
                         .bp-shell, .bp-page { padding-left: 16px; padding-right: 16px; }
                     }
@@ -127,10 +149,10 @@ class Pages:
         def navigation(active_path: str) -> None:
             nav_items = [
                 ("/", "home", "Übersicht"),
+                ("/budget", "trending_up", "Budget"),
                 ("/transactions", "sync_alt", "Transaktionen"),
                 ("/categories", "sell", "Kategorien"),
                 ("/accounts", "account_balance_wallet", "Konten"),
-                ("/budget", "trending_up", "Budget"),
             ]
             with ui.header(elevated=False).classes("bp-header"):
                 with ui.row().classes("bp-shell w-full items-center py-4"):
@@ -166,6 +188,11 @@ class Pages:
             navigation(active_path)
             return ui.column().classes("bp-page w-full gap-6")
 
+        def progress_bar(percent: float, color_class: str) -> None:
+            width = max(0, min(percent, 100))
+            with ui.element("div").classes("w-full bg-gray-200 rounded-full h-2 overflow-hidden"):
+                ui.element("div").classes(f"h-2 rounded-full {color_class}").style(f"width: {width:.1f}%")
+
         def transaction_columns(show_actions: bool = False) -> list[dict[str, str]]:
             columns: list[dict[str, str]] = [
                 {"name": "date", "label": "Datum", "field": "date", "align": "left"},
@@ -185,6 +212,7 @@ class Pages:
                 is_income = transaction.transaction_type == "income"
                 rows.append(
                     {
+                        "id": transaction.id,
                         "date": transaction.transaction_date.strftime("%d.%m.%Y"),
                         "type": "Einnahme" if is_income else "Ausgabe",
                         "type_class": "bp-income-pill" if is_income else "bp-expense-pill",
@@ -197,15 +225,20 @@ class Pages:
                 )
             return rows
 
-        def transaction_table(transactions: list[Transaction], empty_text: str) -> None:
+        def transaction_table(
+            transactions: list[Transaction],
+            empty_text: str,
+            on_edit: Callable[[int], None] | None = None,
+            on_delete: Callable[[int], None] | None = None,
+        ) -> None:
             if not transactions:
                 with ui.card().classes("bp-card w-full p-8 text-center"):
                     ui.label(empty_text).classes("bp-muted")
                 return
             table = ui.table(
-                columns=transaction_columns(),
+                columns=transaction_columns(show_actions=on_edit is not None or on_delete is not None),
                 rows=transaction_rows(transactions),
-                row_key="date",
+                row_key="id",
             ).classes("bp-card bp-table w-full").props("flat")
             table.add_slot("body-cell-type", """
                 <q-td :props="props">
@@ -217,6 +250,27 @@ class Pages:
                     <span class="font-semibold" :class="props.row.amount_class">{{ props.row.amount }}</span>
                 </q-td>
             """)
+            if on_edit is not None or on_delete is not None:
+                table.add_slot("body-cell-actions", """
+                    <q-td :props="props">
+                        <q-btn flat dense round icon="edit" color="primary" @click="$parent.$emit('edit-row', props.row.id)" />
+                        <q-btn flat dense round icon="delete" color="negative" @click="$parent.$emit('delete-row', props.row.id)" />
+                    </q-td>
+                """)
+                if on_edit is not None:
+                    table.on("edit-row", lambda event: on_edit(int(event.args)))
+                if on_delete is not None:
+                    table.on("delete-row", lambda event: on_delete(int(event.args)))
+
+        def budget_for_category(budgets: list[Budget], category_id: int | None, year: int, month: int) -> Budget | None:
+            return next(
+                (
+                    budget
+                    for budget in budgets
+                    if budget.category_id == category_id and budget.year == year and budget.month == month
+                ),
+                None,
+            )
 
         add_theme()
 
@@ -228,7 +282,18 @@ class Pages:
             accounts = controller.list_accounts()
             total_account_balance = sum(account_balance(account, all_transactions) for account in accounts)
             total_budget = sum(status.budget.limit_chf for status in data.budget_statuses)
-            total_budget_remaining = total_budget - data.overview.total_expenses_chf
+            budgeted_category_ids = {status.budget.category_id for status in data.budget_statuses}
+            budgeted_expenses = sum(
+                transaction.amount_chf
+                for transaction in data.transactions
+                if transaction.transaction_type == "expense" and transaction.category_id in budgeted_category_ids
+            )
+            unbudgeted_expenses = sum(
+                transaction.amount_chf
+                for transaction in data.transactions
+                if transaction.transaction_type == "expense" and transaction.category_id not in budgeted_category_ids
+            )
+            total_budget_remaining = total_budget - budgeted_expenses
             exceeded = [status for status in data.budget_statuses if status.is_exceeded]
             monthly_comparison = []
             for comparison_year, comparison_month in previous_months(year, month):
@@ -262,17 +327,26 @@ class Pages:
                                         f"{status.budget.category.name}: {money(abs(status.remaining_chf))} über dem Limit"
                                     ).classes("text-sm text-yellow-700")
 
-                with ui.grid(columns="repeat(auto-fit, minmax(240px, 1fr))").classes("w-full gap-6"):
+                with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-6"):
                     stat_card("Einnahmen (Monat)", money(data.overview.total_income_chf), "trending_up", "green")
                     stat_card("Ausgaben (Monat)", money(data.overview.total_expenses_chf), "trending_down", "red")
                     stat_card("Gesamtkontostand", money(total_account_balance), "account_balance_wallet", "blue")
+                    stat_card("Aktueller Monat", month_name(year, month), "calendar_month", "blue")
                     stat_card(
                         "Verfügbares Budget",
                         money(total_budget_remaining),
                         "trending_up",
                         "purple" if total_budget_remaining >= 0 else "red",
-                        f"von {money(total_budget)}" if total_budget else "Noch kein Monatsbudget",
+                        f"Budgetierte Ausgaben: {money(budgeted_expenses)}"
+                        if total_budget
+                        else "Noch kein Monatsbudget",
                     )
+                if unbudgeted_expenses:
+                    with ui.element("div").classes("bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full"):
+                        ui.label(
+                            f"Hinweis: {money(unbudgeted_expenses)} Ausgaben liegen in Kategorien ohne Budget und werden "
+                            "nicht vom verfügbaren Budget abgezogen."
+                        ).classes("text-sm text-yellow-800")
 
                 with ui.grid(columns="repeat(auto-fit, minmax(320px, 1fr))").classes("w-full gap-6"):
                     with ui.card().classes("bp-card w-full p-6"):
@@ -289,7 +363,9 @@ class Pages:
                                     "series": [
                                         {
                                             "type": "pie",
-                                            "radius": ["35%", "70%"],
+                                            "radius": "70%",
+                                            "label": {"show": False},
+                                            "labelLine": {"show": False},
                                             "data": [
                                                 {"name": name, "value": round(value, 2)}
                                                 for name, value in category_totals.items()
@@ -326,6 +402,22 @@ class Pages:
                                 ],
                             }
                         ).classes("h-80 w-full")
+                        rows = [
+                            {
+                                "month": item["month"],
+                                "income": money(item["income"]),
+                                "expenses": money(item["expenses"]),
+                            }
+                            for item in monthly_comparison
+                        ]
+                        ui.table(
+                            columns=[
+                                {"name": "month", "label": "Monat", "field": "month", "align": "left"},
+                                {"name": "income", "label": "Einnahmen", "field": "income", "align": "right"},
+                                {"name": "expenses", "label": "Ausgaben", "field": "expenses", "align": "right"},
+                            ],
+                            rows=rows,
+                        ).classes("bp-table w-full mt-4").props("flat dense")
 
                 with ui.grid(columns="repeat(auto-fit, minmax(320px, 1fr))").classes("w-full gap-6"):
                     with ui.card().classes("bp-card w-full p-6"):
@@ -336,11 +428,9 @@ class Pages:
                             for account in accounts:
                                 balance = account_balance(account, all_transactions)
                                 with ui.row().classes("w-full items-center justify-between py-2 border-b border-gray-100"):
-                                    with ui.column().classes("gap-0"):
-                                        ui.label(account.name).classes("font-medium")
-                                        ui.label(f"Startsaldo: {money(account.starting_balance_chf)}").classes("text-xs bp-muted")
+                                    ui.label(account.name).classes("font-medium")
                                     ui.label(money(balance)).classes(
-                                        f"font-semibold {'bp-positive' if balance >= 0 else 'bp-negative'}"
+                                        f"font-semibold bp-money {'bp-positive' if balance >= 0 else 'bp-negative'}"
                                     )
 
                     with ui.card().classes("bp-card w-full p-6"):
@@ -357,8 +447,11 @@ class Pages:
                                         ui.label(f"{money(status.spent_chf)} / {money(status.budget.limit_chf)}").classes(
                                             "text-sm bp-muted"
                                         )
-                                    ui.linear_progress(percent / 100).props(f"color={color} rounded")
-                                    ui.label(f"{money(status.remaining_chf)} Restbudget").classes("text-xs bp-muted")
+                                    color_class = "bg-red-600" if color == "red" else "bg-yellow-500" if color == "yellow" else "bg-green-600"
+                                    progress_bar(percent, color_class)
+                                    ui.label(f"{percent:.0f}% genutzt · {money(status.remaining_chf)} Restbudget").classes(
+                                        "text-xs bp-muted"
+                                    )
 
                 with ui.card().classes("bp-card w-full p-6"):
                     ui.label("Letzte Transaktionen im aktuellen Monat").classes("bp-section-title mb-4")
@@ -367,31 +460,32 @@ class Pages:
         @ui.page("/transactions")
         def transactions_page() -> None:
             with page_container("/transactions"):
-                with ui.row().classes("w-full items-center justify-between gap-4"):
-                    ui.label("Transaktionen").classes("bp-title")
-                    ui.button(
-                        "Neue Transaktion",
-                        icon="add",
-                        on_click=lambda: ui.run_javascript("window.scrollTo({top: 160, behavior: 'smooth'})"),
-                    ).classes("bp-primary-btn")
+                ui.label("Transaktionen").classes("bp-title")
 
                 accounts = controller.list_accounts()
                 categories = controller.list_categories()
                 account_options = {account.id: account.name for account in accounts}
-                category_options = {category.id: f"{category.name} ({category_type_label(category)})" for category in categories}
+
+                def category_options_for(transaction_type_value: str) -> dict[int, str]:
+                    return {
+                        category.id: category.name
+                        for category in categories
+                        if category.category_type == transaction_type_value
+                    }
 
                 with ui.card().classes("bp-card w-full p-6"):
                     ui.label("Neue Transaktion erfassen").classes("bp-section-title mb-4")
-                    with ui.grid(columns="repeat(auto-fit, minmax(240px, 1fr))").classes("w-full gap-4"):
-                        transaction_type = ui.radio({"income": "Einnahme", "expense": "Ausgabe"}, value="expense").props(
-                            "inline"
-                        )
-                        amount = ui.number("Betrag (CHF)", value=0.0, min=0.01, step=0.05).classes("w-full")
+                    ui.label("Typ").classes("font-semibold mb-1")
+                    transaction_type = ui.radio({"income": "Einnahme", "expense": "Ausgabe"}, value="expense").props(
+                        "inline"
+                    ).classes("text-lg mb-4")
+                    with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-4"):
+                        amount = number_input("Betrag (CHF)", "0.00")
                         transaction_date = ui.input("Datum", value=date.today().isoformat()).props("type=date").classes(
                             "w-full"
                         )
                         account = ui.select(account_options, label="Konto").classes("w-full")
-                        category = ui.select(category_options, label="Kategorie").classes("w-full")
+                        category = ui.select(category_options_for("expense"), label="Kategorie").classes("w-full")
                     description = ui.input("Beschreibung", placeholder="Optional").classes("w-full mt-4")
                     with ui.column().classes("gap-2 mt-4"):
                         recurring = ui.checkbox("Wiederkehrende Transaktion").props("disable")
@@ -402,12 +496,18 @@ class Pages:
                             value="monthly",
                         ).classes("w-full max-w-sm").props("disable")
 
+                    def update_category_options() -> None:
+                        category.set_options(category_options_for(str(transaction_type.value)))
+                        category.value = None
+
+                    transaction_type.on_value_change(update_category_options)
+
                     def save_transaction() -> None:
                         try:
                             if account.value is None or category.value is None:
                                 raise ValueError("Bitte Konto und Kategorie auswählen.")
                             controller.create_transaction(
-                                amount_chf=float(amount.value),
+                                amount_chf=parse_float(amount.value, "einen Betrag"),
                                 transaction_type=str(transaction_type.value),
                                 transaction_date=date.fromisoformat(str(transaction_date.value)),
                                 description=description.value or "",
@@ -455,6 +555,82 @@ class Pages:
                     ui.label("Transaktionsliste").classes("bp-section-title mb-4")
                     transaction_list = ui.column().classes("w-full")
 
+                    def open_delete_dialog(transaction_id: int) -> None:
+                        with ui.dialog() as dialog, ui.card().classes("bp-card p-6"):
+                            ui.label("Transaktion löschen?").classes("bp-section-title")
+                            ui.label("Diese Aktion kann nicht rückgängig gemacht werden.").classes("bp-muted")
+
+                            def delete_transaction() -> None:
+                                try:
+                                    controller.delete_transaction(transaction_id)
+                                except Exception as error:
+                                    ui.notify(str(error), type="warning")
+                                    return
+                                ui.notify("Transaktion gelöscht.", type="positive")
+                                ui.navigate.to("/transactions")
+
+                            with ui.row().classes("gap-3 mt-4"):
+                                ui.button("Löschen", icon="delete", on_click=delete_transaction).classes("bg-red-600 text-white rounded-lg")
+                                ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                        dialog.open()
+
+                    def open_edit_dialog(transaction_id: int) -> None:
+                        transaction = next(item for item in transactions if item.id == transaction_id)
+                        with ui.dialog() as dialog, ui.card().classes("bp-card p-6 w-full max-w-3xl"):
+                            ui.label("Transaktion bearbeiten").classes("bp-section-title mb-4")
+                            edit_type = ui.radio(
+                                {"income": "Einnahme", "expense": "Ausgabe"},
+                                value=transaction.transaction_type,
+                            ).props("inline").classes("text-lg mb-4")
+                            with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-4"):
+                                edit_amount = number_input("Betrag (CHF)", "0.00")
+                                edit_amount.value = f"{transaction.amount_chf:.2f}"
+                                edit_date = ui.input(
+                                    "Datum",
+                                    value=transaction.transaction_date.isoformat(),
+                                ).props("type=date").classes("w-full")
+                                edit_account = ui.select(account_options, label="Konto", value=transaction.account_id).classes("w-full")
+                                edit_category = ui.select(
+                                    category_options_for(transaction.transaction_type),
+                                    label="Kategorie",
+                                    value=transaction.category_id,
+                                ).classes("w-full")
+                            edit_description = ui.input(
+                                "Beschreibung",
+                                value=transaction.description,
+                                placeholder="Optional",
+                            ).classes("w-full mt-4")
+
+                            def update_edit_category_options() -> None:
+                                edit_category.set_options(category_options_for(str(edit_type.value)))
+                                edit_category.value = None
+
+                            edit_type.on_value_change(update_edit_category_options)
+
+                            def save_edit() -> None:
+                                try:
+                                    if edit_account.value is None or edit_category.value is None:
+                                        raise ValueError("Bitte Konto und Kategorie auswählen.")
+                                    controller.update_transaction(
+                                        transaction_id=transaction_id,
+                                        amount_chf=parse_float(edit_amount.value, "einen Betrag"),
+                                        transaction_type=str(edit_type.value),
+                                        transaction_date=date.fromisoformat(str(edit_date.value)),
+                                        description=edit_description.value or "",
+                                        account_id=int(edit_account.value),
+                                        category_id=int(edit_category.value),
+                                    )
+                                except Exception as error:
+                                    ui.notify(str(error), type="warning")
+                                    return
+                                ui.notify("Transaktion aktualisiert.", type="positive")
+                                ui.navigate.to("/transactions")
+
+                            with ui.row().classes("gap-3 mt-4"):
+                                ui.button("Speichern", icon="save", on_click=save_edit).classes("bp-primary-btn")
+                                ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                        dialog.open()
+
                     def filtered_transactions() -> list[Transaction]:
                         result = transactions
                         if filter_type.value:
@@ -472,7 +648,12 @@ class Pages:
                     def render_transaction_list() -> None:
                         transaction_list.clear()
                         with transaction_list:
-                            transaction_table(filtered_transactions(), "Keine Transaktionen gefunden.")
+                            transaction_table(
+                                filtered_transactions(),
+                                "Keine Transaktionen gefunden.",
+                                on_edit=open_edit_dialog,
+                                on_delete=open_delete_dialog,
+                            )
 
                     def reset_filters() -> None:
                         filter_type.value = ""
@@ -490,13 +671,7 @@ class Pages:
         def categories_page() -> None:
             transactions = controller.list_recent_transactions()
             with page_container("/categories"):
-                with ui.row().classes("w-full items-center justify-between gap-4"):
-                    ui.label("Kategorien verwalten").classes("bp-title")
-                    ui.button(
-                        "Neue Kategorie",
-                        icon="add",
-                        on_click=lambda: ui.run_javascript("window.scrollTo({top: 160, behavior: 'smooth'})"),
-                    ).classes("bp-primary-btn")
+                ui.label("Kategorien verwalten").classes("bp-title")
 
                 with ui.card().classes("bp-card w-full p-6"):
                     ui.label("Neue Kategorie erstellen").classes("bp-section-title mb-4")
@@ -525,6 +700,8 @@ class Pages:
                         "type": category_type_label(category),
                         "type_class": "bp-income-pill" if category.category_type == "income" else "bp-expense-pill",
                         "usage": f"{usage_count(transactions, 'category_id', category.id)} Transaktionen",
+                        "id": category.id,
+                        "category_type": category.category_type,
                     }
                     for category in categories
                 ]
@@ -533,48 +710,97 @@ class Pages:
                         {"name": "name", "label": "Kategoriename", "field": "name", "align": "left"},
                         {"name": "type", "label": "Typ", "field": "type", "align": "left"},
                         {"name": "usage", "label": "Verwendungen", "field": "usage", "align": "left"},
+                        {"name": "actions", "label": "Aktionen", "field": "actions", "align": "right"},
                     ],
                     rows=rows,
+                    row_key="id",
                 ).classes("bp-card bp-table w-full").props("flat")
                 category_table.add_slot("body-cell-type", """
                     <q-td :props="props">
                         <span class="bp-pill" :class="props.row.type_class">{{ props.row.type }}</span>
                     </q-td>
                 """)
+                category_table.add_slot("body-cell-actions", """
+                    <q-td :props="props">
+                        <q-btn flat dense round icon="edit" color="primary" @click="$parent.$emit('edit-category', props.row.id)" />
+                        <q-btn flat dense round icon="delete" color="negative" @click="$parent.$emit('delete-category', props.row.id)" />
+                    </q-td>
+                """)
 
-                with ui.element("div").classes("bg-blue-50 border border-blue-200 rounded-lg p-4 w-full"):
-                    ui.label("Tipp").classes("font-semibold text-blue-900 mb-2")
-                    ui.label(
-                        "Kategorien strukturieren Einnahmen und Ausgaben. Bearbeiten und Löschen ist in der aktuellen "
-                        "Service-Schicht noch nicht vorgesehen."
-                    ).classes("text-sm text-blue-800")
+                def open_edit_category_dialog(category_id: int) -> None:
+                    category = next(item for item in categories if item.id == category_id)
+                    with ui.dialog() as dialog, ui.card().classes("bp-card p-6 w-full max-w-2xl"):
+                        ui.label("Kategorie bearbeiten").classes("bp-section-title mb-4")
+                        edit_name = ui.input("Kategoriename", value=category.name).classes("w-full")
+                        edit_type = ui.radio(
+                            {"income": "Einnahme", "expense": "Ausgabe"},
+                            value=category.category_type,
+                        ).props("inline").classes("text-lg mt-4")
+
+                        def save_category_edit() -> None:
+                            try:
+                                controller.update_category(
+                                    category_id=category_id,
+                                    name=edit_name.value or "",
+                                    category_type=str(edit_type.value),
+                                )
+                            except Exception as error:
+                                ui.notify(str(error), type="warning")
+                                return
+                            ui.notify("Kategorie aktualisiert.", type="positive")
+                            ui.navigate.to("/categories")
+
+                        with ui.row().classes("gap-3 mt-4"):
+                            ui.button("Speichern", icon="save", on_click=save_category_edit).classes("bp-primary-btn")
+                            ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                    dialog.open()
+
+                def open_delete_category_dialog(category_id: int) -> None:
+                    with ui.dialog() as dialog, ui.card().classes("bp-card p-6"):
+                        ui.label("Kategorie löschen?").classes("bp-section-title")
+                        ui.label("Kategorien können nur gelöscht werden, wenn sie nicht verwendet werden.").classes("bp-muted")
+
+                        def delete_category() -> None:
+                            try:
+                                controller.delete_category(category_id)
+                            except Exception as error:
+                                ui.notify(str(error), type="warning")
+                                return
+                            ui.notify("Kategorie gelöscht.", type="positive")
+                            ui.navigate.to("/categories")
+
+                        with ui.row().classes("gap-3 mt-4"):
+                            ui.button("Löschen", icon="delete", on_click=delete_category).classes("bg-red-600 text-white rounded-lg")
+                            ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                    dialog.open()
+
+                category_table.on("edit-category", lambda event: open_edit_category_dialog(int(event.args)))
+                category_table.on("delete-category", lambda event: open_delete_category_dialog(int(event.args)))
 
         @ui.page("/accounts")
         def accounts_page() -> None:
             transactions = controller.list_recent_transactions()
             with page_container("/accounts"):
-                with ui.row().classes("w-full items-center justify-between gap-4"):
-                    ui.label("Konten verwalten").classes("bp-title")
-                    ui.button(
-                        "Neues Konto",
-                        icon="add",
-                        on_click=lambda: ui.run_javascript("window.scrollTo({top: 160, behavior: 'smooth'})"),
-                    ).classes("bp-primary-btn")
+                ui.label("Konten verwalten").classes("bp-title")
 
                 with ui.card().classes("bp-card w-full p-6"):
                     ui.label("Neues Konto erstellen").classes("bp-section-title mb-4")
                     with ui.grid(columns="repeat(auto-fit, minmax(240px, 1fr))").classes("w-full gap-4"):
                         name = ui.input("Kontoname", placeholder="z.B. Girokonto, Sparkonto").classes("w-full")
                         account_type = ui.select(
-                            ["Bankkonto", "Bargeld", "Sparkonto", "Kreditkarte"],
+                            ["Bankkonto", "Bargeld"],
                             label="Kontotyp",
                             value="Bankkonto",
                         ).classes("w-full")
-                        starting_balance = ui.number("Startsaldo (CHF)", value=0.0, step=0.05).classes("w-full")
+                        starting_balance = number_input("Startsaldo (CHF)", "0.00")
 
                     def save_account() -> None:
                         try:
-                            controller.create_account(name.value or "", account_type.value or "", float(starting_balance.value))
+                            controller.create_account(
+                                name.value or "",
+                                account_type.value or "",
+                                parse_float(starting_balance.value, "einen Startsaldo"),
+                            )
                         except Exception as error:
                             ui.notify(str(error), type="warning")
                             return
@@ -631,13 +857,7 @@ class Pages:
             year, month = current_month()
             month_transactions = controller.dashboard_data(year=year, month=month).transactions
             with page_container("/budget"):
-                with ui.row().classes("w-full items-center justify-between gap-4"):
-                    ui.label("Budget verwalten").classes("bp-title")
-                    ui.button(
-                        "Budget festlegen",
-                        icon="add",
-                        on_click=lambda: ui.run_javascript("window.scrollTo({top: 160, behavior: 'smooth'})"),
-                    ).classes("bp-primary-btn")
+                ui.label("Budget verwalten").classes("bp-title")
 
                 expense_categories = controller.list_categories(category_type="expense")
                 category_options = {category.id: category.name for category in expense_categories}
@@ -652,22 +872,11 @@ class Pages:
                 current_usage = (current_expenses / current_budget_limit * 100) if current_budget_limit else 0
 
                 with ui.card().classes("bp-card w-full p-6"):
-                    ui.label("Monatliches Budget festlegen").classes("bp-section-title mb-4")
+                    ui.label("Budgets pro Kategorie").classes("bp-section-title mb-4")
                     with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-4"):
-                        budget_month = ui.number("Monat", value=month, min=1, max=12, step=1).classes("w-full")
-                        budget_year = ui.number("Jahr", value=year, min=2000, max=2100, step=1).classes("w-full")
-                        ui.number(
-                            "Gesamtbudget (CHF)",
-                            value=current_budget_limit,
-                            step=0.05,
-                        ).classes("w-full").props("disable")
-                    ui.label(
-                        "Das Gesamtbudget ergibt sich aus der Summe der gespeicherten Kategorie-Budgets."
-                    ).classes("text-sm bp-muted mt-2")
-
-                    ui.label("Budgets pro Kategorie (optional)").classes("bp-section-title mt-6 mb-4")
-                    with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-4"):
-                        limit = ui.number("Limit pro Kategorie (CHF)", value=0.0, min=0.01, step=0.05).classes("w-full")
+                        budget_month = number_input("Monat", "1-12")
+                        budget_year = number_input("Jahr", "2026")
+                        limit = number_input("Limit pro Kategorie (CHF)", "0.00")
                         budget_category = ui.select(category_options, label="Ausgabenkategorie").classes("w-full")
 
                     def save_budget() -> None:
@@ -675,9 +884,9 @@ class Pages:
                             if budget_category.value is None:
                                 raise ValueError("Bitte eine Ausgabenkategorie auswählen.")
                             controller.create_budget(
-                                month=int(budget_month.value),
-                                year=int(budget_year.value),
-                                limit_chf=float(limit.value),
+                                month=parse_int(budget_month.value, "einen Monat"),
+                                year=parse_int(budget_year.value, "ein Jahr"),
+                                limit_chf=parse_float(limit.value, "ein Budgetlimit"),
                                 category_id=int(budget_category.value),
                             )
                         except Exception as error:
@@ -699,14 +908,12 @@ class Pages:
                         "savings",
                         "green" if current_remaining >= 0 else "red",
                     )
-                    with ui.card().classes("bp-card w-full p-6"):
-                        ui.label("Verbrauch").classes("text-sm bp-muted")
-                        ui.label(f"{current_usage:.1f}%").classes(
-                            f"text-2xl font-bold mt-2 {'bp-negative' if current_usage > 100 else 'text-yellow-600' if current_usage > 80 else 'bp-positive'}"
-                        )
-                        ui.linear_progress(min(current_usage, 100) / 100).props(
-                            f"color={'red' if current_usage > 100 else 'yellow' if current_usage > 80 else 'green'} rounded"
-                        ).classes("mt-4")
+                    stat_card(
+                        "Verbrauch",
+                        f"{current_usage:.0f}%",
+                        "percent",
+                        "red" if current_usage > 100 else "purple" if current_usage > 80 else "green",
+                    )
 
                 budgets = controller.list_budgets()
                 with ui.card().classes("bp-card w-full p-6"):
@@ -753,22 +960,14 @@ class Pages:
                                             f"text-sm font-semibold {tone}"
                                         )
                                         ui.label(f"Verbrauch: {percent:.1f}%").classes("text-sm bp-muted")
-                                    ui.linear_progress(min(percent, 100) / 100).props(
-                                        f"color={'red' if remaining < 0 else 'yellow' if percent > 80 else 'green'} rounded"
-                                    ).classes("mt-3")
-
-                with ui.element("div").classes("bg-blue-50 border border-blue-200 rounded-lg p-4 w-full"):
-                    ui.label("Tipps").classes("font-semibold text-blue-900 mb-2")
-                    tips = [
-                        "Legen Sie ein realistisches monatliches Gesamtbudget fest",
-                        "Optional: Definieren Sie Budgets für einzelne Kategorien",
-                        "Die App warnt Sie automatisch bei Budgetüberschreitung",
-                        "Passen Sie Ihr Budget bei Bedarf an veränderte Lebensumstände an",
-                    ]
-                    for tip in tips:
-                        with ui.row().classes("items-center gap-2"):
-                            ui.icon("check_circle").classes("text-blue-700 text-sm")
-                            ui.label(tip).classes("text-sm text-blue-800")
+                                    color_class = (
+                                        "bg-red-600"
+                                        if remaining < 0
+                                        else "bg-yellow-500"
+                                        if percent > 80
+                                        else "bg-green-600"
+                                    )
+                                    progress_bar(percent, color_class)
 
         @ui.page("/settings")
         def settings_redirect_page() -> None:

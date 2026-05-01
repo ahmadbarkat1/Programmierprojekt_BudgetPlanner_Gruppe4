@@ -82,6 +82,32 @@ class CategoryDAO(BaseDAO):
         with self.session() as session:
             return session.get(Category, category_id)
 
+    def update(self, category_id: int, name: str, category_type: str) -> Category:
+        with self.session() as session:
+            category = session.get(Category, category_id)
+            if category is None:
+                raise ValueError("Die ausgewählte Kategorie existiert nicht.")
+            category.name = name
+            category.category_type = category_type
+            session.add(category)
+            session.commit()
+            session.refresh(category)
+            return category
+
+    def is_used(self, category_id: int) -> bool:
+        with self.session() as session:
+            transaction = session.exec(select(Transaction).where(Transaction.category_id == category_id)).first()
+            budget = session.exec(select(Budget).where(Budget.category_id == category_id)).first()
+            return transaction is not None or budget is not None
+
+    def delete(self, category_id: int) -> None:
+        with self.session() as session:
+            category = session.get(Category, category_id)
+            if category is None:
+                raise ValueError("Die ausgewählte Kategorie existiert nicht.")
+            session.delete(category)
+            session.commit()
+
 
 class TransactionDAO(BaseDAO):
     """DAO for transaction persistence and queries."""
@@ -92,6 +118,49 @@ class TransactionDAO(BaseDAO):
             session.commit()
             session.refresh(transaction)
             return transaction
+
+    def get_by_id(self, transaction_id: int) -> Optional[Transaction]:
+        with self.session() as session:
+            transaction = session.get(Transaction, transaction_id)
+            if transaction is not None:
+                _ = transaction.account
+                _ = transaction.category
+            return transaction
+
+    def update(
+        self,
+        transaction_id: int,
+        amount_chf: float,
+        transaction_type: str,
+        transaction_date: date,
+        description: str,
+        account_id: int,
+        category_id: int,
+    ) -> Transaction:
+        with self.session() as session:
+            transaction = session.get(Transaction, transaction_id)
+            if transaction is None:
+                raise ValueError("Die ausgewählte Transaktion existiert nicht.")
+            transaction.amount_chf = amount_chf
+            transaction.transaction_type = transaction_type
+            transaction.transaction_date = transaction_date
+            transaction.description = description
+            transaction.account_id = account_id
+            transaction.category_id = category_id
+            session.add(transaction)
+            session.commit()
+            session.refresh(transaction)
+            _ = transaction.account
+            _ = transaction.category
+            return transaction
+
+    def delete(self, transaction_id: int) -> None:
+        with self.session() as session:
+            transaction = session.get(Transaction, transaction_id)
+            if transaction is None:
+                raise ValueError("Die ausgewählte Transaktion existiert nicht.")
+            session.delete(transaction)
+            session.commit()
 
     def list_recent(self, limit: int = 200) -> List[Transaction]:
         with self.session() as session:
@@ -154,4 +223,3 @@ class BudgetDAO(BaseDAO):
                 .where(Budget.month == month)
             )
             return session.exec(statement).first()
-

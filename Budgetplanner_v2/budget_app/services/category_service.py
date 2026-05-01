@@ -26,3 +26,14 @@ class CategoryService:
     def list_categories(self, user_id: int, category_type: Optional[str] = None) -> List[Category]:
         return self.category_dao.list_for_user(user_id, category_type=category_type)
 
+    def update_category(self, category_id: int, name: str, category_type: str) -> Category:
+        if not name.strip():
+            raise ValueError("Der Kategoriename darf nicht leer sein.")
+        if category_type not in self.VALID_TYPES:
+            raise ValueError("Kategorie-Typ muss 'income' oder 'expense' sein.")
+        return self.category_dao.update(category_id, name.strip(), category_type)
+
+    def delete_category(self, category_id: int) -> None:
+        if self.category_dao.is_used(category_id):
+            raise ValueError("Diese Kategorie wird bereits verwendet und kann nicht gelöscht werden.")
+        self.category_dao.delete(category_id)
