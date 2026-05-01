@@ -83,6 +83,17 @@ class FinanceController:
             user_id=self.default_user().id,
         )
 
+    def update_account(self, account_id: int, name: str, account_type: str, starting_balance_chf: float) -> Account:
+        return self.account_service.update_account(
+            account_id=account_id,
+            name=name,
+            account_type=account_type,
+            starting_balance_chf=starting_balance_chf,
+        )
+
+    def delete_account(self, account_id: int) -> None:
+        self.account_service.delete_account(account_id)
+
     def create_category(self, name: str, category_type: str) -> Category:
         return self.category_service.create_category(
             name=name,

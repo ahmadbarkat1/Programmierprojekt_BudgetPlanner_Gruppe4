@@ -59,6 +59,32 @@ class AccountDAO(BaseDAO):
         with self.session() as session:
             return session.get(Account, account_id)
 
+    def update(self, account_id: int, name: str, account_type: str, starting_balance_chf: float) -> Account:
+        with self.session() as session:
+            account = session.get(Account, account_id)
+            if account is None:
+                raise ValueError("Das ausgewählte Konto existiert nicht.")
+            account.name = name
+            account.account_type = account_type
+            account.starting_balance_chf = starting_balance_chf
+            session.add(account)
+            session.commit()
+            session.refresh(account)
+            return account
+
+    def has_transactions(self, account_id: int) -> bool:
+        with self.session() as session:
+            transaction = session.exec(select(Transaction).where(Transaction.account_id == account_id)).first()
+            return transaction is not None
+
+    def delete(self, account_id: int) -> None:
+        with self.session() as session:
+            account = session.get(Account, account_id)
+            if account is None:
+                raise ValueError("Das ausgewählte Konto existiert nicht.")
+            session.delete(account)
+            session.commit()
+
 
 class CategoryDAO(BaseDAO):
     """DAO for categories."""

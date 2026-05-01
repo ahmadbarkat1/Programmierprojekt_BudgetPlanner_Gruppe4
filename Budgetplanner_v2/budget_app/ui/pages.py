@@ -28,6 +28,9 @@ class Pages:
         def money(value: float) -> str:
             return f"CHF {value:,.2f}".replace(",", "’")
 
+        def chart_number_formatter() -> str:
+            return "(value) => Number(value).toLocaleString('de-CH')"
+
         def month_label(year: int, month: int) -> str:
             return date(year, month, 1).strftime("%m.%Y")
 
@@ -172,6 +175,7 @@ class Pages:
                 "red": ("bg-red-100", "text-red-600", "bp-negative"),
                 "blue": ("bg-blue-100", "text-blue-600", "bp-blue"),
                 "purple": ("bg-purple-100", "text-purple-600", "text-purple-600"),
+                "neutral": ("bg-gray-100", "text-gray-700", "text-gray-900"),
             }
             bg_class, icon_class, value_class = tones[tone]
             with ui.card().classes("bp-card w-full p-6"):
@@ -328,10 +332,10 @@ class Pages:
                                     ).classes("text-sm text-yellow-700")
 
                 with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-6"):
+                    stat_card("Aktueller Monat", month_name(year, month), "calendar_month", "neutral")
                     stat_card("Einnahmen (Monat)", money(data.overview.total_income_chf), "trending_up", "green")
                     stat_card("Ausgaben (Monat)", money(data.overview.total_expenses_chf), "trending_down", "red")
                     stat_card("Gesamtkontostand", money(total_account_balance), "account_balance_wallet", "blue")
-                    stat_card("Aktueller Monat", month_name(year, month), "calendar_month", "blue")
                     stat_card(
                         "Verfügbares Budget",
                         money(total_budget_remaining),
@@ -358,7 +362,13 @@ class Pages:
                         if category_totals:
                             ui.echart(
                                 {
-                                    "tooltip": {"trigger": "item"},
+                                    "tooltip": {
+                                        "trigger": "item",
+                                        ":formatter": (
+                                            "(params) => `${params.name}: "
+                                            "${Number(params.value).toLocaleString('de-CH')}`"
+                                        ),
+                                    },
                                     "legend": {"bottom": 0},
                                     "series": [
                                         {
@@ -381,11 +391,14 @@ class Pages:
                         ui.label("Einnahmen vs. Ausgaben (6 Monate)").classes("bp-section-title mb-4")
                         ui.echart(
                             {
-                                "tooltip": {"trigger": "axis"},
+                                "tooltip": {
+                                    "trigger": "axis",
+                                    ":valueFormatter": chart_number_formatter(),
+                                },
                                 "legend": {"bottom": 0},
                                 "grid": {"left": 50, "right": 24, "top": 24, "bottom": 58},
                                 "xAxis": {"type": "category", "data": [item["month"] for item in monthly_comparison]},
-                                "yAxis": {"type": "value"},
+                                "yAxis": {"type": "value", "axisLabel": {":formatter": chart_number_formatter()}},
                                 "series": [
                                     {
                                         "name": "Einnahmen",
@@ -402,22 +415,6 @@ class Pages:
                                 ],
                             }
                         ).classes("h-80 w-full")
-                        rows = [
-                            {
-                                "month": item["month"],
-                                "income": money(item["income"]),
-                                "expenses": money(item["expenses"]),
-                            }
-                            for item in monthly_comparison
-                        ]
-                        ui.table(
-                            columns=[
-                                {"name": "month", "label": "Monat", "field": "month", "align": "left"},
-                                {"name": "income", "label": "Einnahmen", "field": "income", "align": "right"},
-                                {"name": "expenses", "label": "Ausgaben", "field": "expenses", "align": "right"},
-                            ],
-                            rows=rows,
-                        ).classes("bp-table w-full mt-4").props("flat dense")
 
                 with ui.grid(columns="repeat(auto-fit, minmax(320px, 1fr))").classes("w-full gap-6"):
                     with ui.card().classes("bp-card w-full p-6"):
@@ -488,13 +485,12 @@ class Pages:
                         category = ui.select(category_options_for("expense"), label="Kategorie").classes("w-full")
                     description = ui.input("Beschreibung", placeholder="Optional").classes("w-full mt-4")
                     with ui.column().classes("gap-2 mt-4"):
-                        recurring = ui.checkbox("Wiederkehrende Transaktion").props("disable")
-                        recurring.tooltip("Wiederkehrende Transaktionen sind im aktuellen Datenmodell noch nicht gespeichert.")
+                        ui.checkbox("Wiederkehrende Transaktion")
                         ui.select(
                             {"monthly": "Monatlich", "weekly": "Wöchentlich", "yearly": "Jährlich"},
                             label="Wiederholung",
                             value="monthly",
-                        ).classes("w-full max-w-sm").props("disable")
+                        ).classes("w-full max-w-sm")
 
                     def update_category_options() -> None:
                         category.set_options(category_options_for(str(transaction_type.value)))
@@ -813,6 +809,67 @@ class Pages:
 
                 accounts = controller.list_accounts()
                 if accounts:
+                    def open_edit_account_dialog(account_id: int) -> None:
+                        account_to_edit = next(account for account in accounts if account.id == account_id)
+                        with ui.dialog() as dialog, ui.card().classes("bp-card p-6 w-full max-w-2xl"):
+                            ui.label("Konto bearbeiten").classes("bp-section-title mb-4")
+                            with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-4"):
+                                edit_name = ui.input("Kontoname", value=account_to_edit.name).classes("w-full")
+                                edit_type = ui.select(
+                                    ["Bankkonto", "Bargeld"],
+                                    label="Kontotyp",
+                                    value=account_to_edit.account_type
+                                    if account_to_edit.account_type in {"Bankkonto", "Bargeld"}
+                                    else "Bankkonto",
+                                ).classes("w-full")
+                                edit_starting_balance = number_input("Startsaldo (CHF)", "0.00")
+                                edit_starting_balance.value = f"{account_to_edit.starting_balance_chf:.2f}"
+
+                            def save_account_edit() -> None:
+                                try:
+                                    controller.update_account(
+                                        account_id=account_id,
+                                        name=edit_name.value or "",
+                                        account_type=edit_type.value or "",
+                                        starting_balance_chf=parse_float(
+                                            edit_starting_balance.value,
+                                            "einen Startsaldo",
+                                        ),
+                                    )
+                                except Exception as error:
+                                    ui.notify(str(error), type="warning")
+                                    return
+                                ui.notify("Konto aktualisiert.", type="positive")
+                                ui.navigate.to("/accounts")
+
+                            with ui.row().classes("gap-3 mt-4"):
+                                ui.button("Speichern", icon="save", on_click=save_account_edit).classes("bp-primary-btn")
+                                ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                        dialog.open()
+
+                    def open_delete_account_dialog(account_id: int) -> None:
+                        with ui.dialog() as dialog, ui.card().classes("bp-card p-6"):
+                            ui.label("Konto löschen?").classes("bp-section-title")
+                            ui.label("Dieses Konto wird nur gelöscht, wenn keine Transaktionen damit verknüpft sind.").classes(
+                                "bp-muted"
+                            )
+
+                            def delete_account() -> None:
+                                try:
+                                    controller.delete_account(account_id)
+                                except Exception as error:
+                                    ui.notify(str(error), type="warning")
+                                    return
+                                ui.notify("Konto gelöscht.", type="positive")
+                                ui.navigate.to("/accounts")
+
+                            with ui.row().classes("gap-3 mt-4"):
+                                ui.button("Löschen", icon="delete", on_click=delete_account).classes(
+                                    "bg-red-600 text-white rounded-lg"
+                                )
+                                ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                        dialog.open()
+
                     with ui.grid(columns="repeat(auto-fit, minmax(280px, 1fr))").classes("w-full gap-6"):
                         for account in accounts:
                             balance = account_balance(account, transactions)
@@ -825,7 +882,15 @@ class Pages:
                                         with ui.column().classes("gap-0"):
                                             ui.label(account.name).classes("font-semibold text-lg text-gray-900")
                                             ui.label(f"{count} Transaktionen").classes("text-xs bp-muted")
-                                    ui.icon("lock").classes("text-gray-300")
+                                    with ui.row().classes("gap-1"):
+                                        ui.button(
+                                            icon="edit",
+                                            on_click=lambda account_id=account.id: open_edit_account_dialog(account_id),
+                                        ).props("flat dense round color=primary")
+                                        ui.button(
+                                            icon="delete",
+                                            on_click=lambda account_id=account.id: open_delete_account_dialog(account_id),
+                                        ).props("flat dense round color=negative")
                                 ui.label("Startsaldo").classes("text-xs bp-muted")
                                 ui.label(money(account.starting_balance_chf)).classes("text-sm text-gray-700 mb-3")
                                 ui.separator()
@@ -872,7 +937,7 @@ class Pages:
                 current_usage = (current_expenses / current_budget_limit * 100) if current_budget_limit else 0
 
                 with ui.card().classes("bp-card w-full p-6"):
-                    ui.label("Budgets pro Kategorie").classes("bp-section-title mb-4")
+                    ui.label("Budget nach Kategorie erfassen").classes("bp-section-title mb-4")
                     with ui.grid(columns="repeat(auto-fit, minmax(220px, 1fr))").classes("w-full gap-4"):
                         budget_month = number_input("Monat", "1-12")
                         budget_year = number_input("Jahr", "2026")
