@@ -1,14 +1,18 @@
 """Domain and ORM models.
 
-The project follows the structure of the Pizzeria reference project: SQLModel is
-used as ORM, and the same classes represent domain objects and database tables.
+The project follows the structure of the Pizzeria reference project.
+SQLModel is used as ORM, meaning:
+
+- Classes represent database tables
+- Attributes represent table columns
+- Relationships define connections between tables
 
 Entities:
 - User: owner of accounts, categories and budgets
-- Account: money source such as bank account, cash or savings account
-- Category: grouping for income and expense transactions
-- Transaction: one income or expense entry
-- Budget: monthly category limit
+- Account: financial account (bank, cash, savings)
+- Category: grouping for income and expenses
+- Transaction: single income or expense entry
+- Budget: monthly limit per category
 """
 
 from datetime import date
