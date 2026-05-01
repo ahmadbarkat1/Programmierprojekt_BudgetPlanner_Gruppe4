@@ -131,6 +131,16 @@ class Pages:
                     .bp-negative { color: #dc2626; }
                     .bp-blue { color: #2563eb; }
                     .bp-money { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+                    .bp-stat-card { overflow: hidden; min-height: 128px; }
+                    .bp-stat-layout { display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%; }
+                    .bp-stat-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; width: 100%; }
+                    .bp-stat-title { min-width: 0; overflow-wrap: anywhere; padding-top: 2px; }
+                    .bp-stat-value { min-height: 32px; display: flex; align-items: baseline; font-variant-numeric: tabular-nums; white-space: nowrap; width: 100%; }
+                    .bp-stat-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex: 0 0 44px; }
+                    .bp-account-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; width: 100%; }
+                    .bp-account-card { min-height: 245px; display: flex; flex-direction: column; }
+                    .bp-account-card-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; width: 100%; }
+                    .bp-account-actions { display: flex; gap: 4px; justify-content: flex-end; align-items: center; flex-shrink: 0; }
                     .bp-pill { border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
                     .bp-income-pill { background: #dcfce7; color: #166534; }
                     .bp-expense-pill { background: #fee2e2; color: #991b1b; }
@@ -178,15 +188,15 @@ class Pages:
                 "neutral": ("bg-gray-100", "text-gray-700", "text-gray-900"),
             }
             bg_class, icon_class, value_class = tones[tone]
-            with ui.card().classes("bp-card w-full p-6"):
-                with ui.row().classes("w-full items-start justify-between no-wrap"):
-                    with ui.column().classes("gap-1"):
-                        ui.label(title).classes("text-sm bp-muted")
-                        ui.label(value).classes(f"text-2xl font-bold mt-2 {value_class}")
-                        if subtitle:
-                            ui.label(subtitle).classes("text-xs bp-muted")
-                    with ui.element("div").classes(f"{bg_class} rounded-full p-3"):
-                        ui.icon(icon).classes(f"text-2xl {icon_class}")
+            with ui.card().classes("bp-card bp-stat-card w-full p-6"):
+                with ui.element("div").classes("bp-stat-layout"):
+                    with ui.element("div").classes("bp-stat-top"):
+                        ui.label(title).classes("bp-stat-title text-sm bp-muted")
+                        with ui.element("div").classes(f"bp-stat-icon {bg_class} rounded-full"):
+                            ui.icon(icon).classes(f"text-xl {icon_class}")
+                    ui.label(value).classes(f"bp-stat-value text-2xl font-bold {value_class}")
+                    if subtitle:
+                        ui.label(subtitle).classes("text-xs bp-muted")
 
         def page_container(active_path: str) -> Callable[[], None]:
             navigation(active_path)
@@ -341,9 +351,7 @@ class Pages:
                         money(total_budget_remaining),
                         "trending_up",
                         "purple" if total_budget_remaining >= 0 else "red",
-                        f"Budgetierte Ausgaben: {money(budgeted_expenses)}"
-                        if total_budget
-                        else "Noch kein Monatsbudget",
+                        None,
                     )
                 if unbudgeted_expenses:
                     with ui.element("div").classes("bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full"):
@@ -457,8 +465,6 @@ class Pages:
         @ui.page("/transactions")
         def transactions_page() -> None:
             with page_container("/transactions"):
-                ui.label("Transaktionen").classes("bp-title")
-
                 accounts = controller.list_accounts()
                 categories = controller.list_categories()
                 account_options = {account.id: account.name for account in accounts}
@@ -667,8 +673,6 @@ class Pages:
         def categories_page() -> None:
             transactions = controller.list_recent_transactions()
             with page_container("/categories"):
-                ui.label("Kategorien verwalten").classes("bp-title")
-
                 with ui.card().classes("bp-card w-full p-6"):
                     ui.label("Neue Kategorie erstellen").classes("bp-section-title mb-4")
                     category_name = ui.input("Kategoriename", placeholder="z.B. Lebensmittel, Transport").classes(
@@ -777,8 +781,6 @@ class Pages:
         def accounts_page() -> None:
             transactions = controller.list_recent_transactions()
             with page_container("/accounts"):
-                ui.label("Konten verwalten").classes("bp-title")
-
                 with ui.card().classes("bp-card w-full p-6"):
                     ui.label("Neues Konto erstellen").classes("bp-section-title mb-4")
                     with ui.grid(columns="repeat(auto-fit, minmax(240px, 1fr))").classes("w-full gap-4"):
@@ -870,19 +872,19 @@ class Pages:
                                 ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
                         dialog.open()
 
-                    with ui.grid(columns="repeat(auto-fit, minmax(280px, 1fr))").classes("w-full gap-6"):
+                    with ui.element("div").classes("bp-account-grid"):
                         for account in accounts:
                             balance = account_balance(account, transactions)
                             count = usage_count(transactions, "account_id", account.id)
-                            with ui.card().classes("bp-card bp-card-hover w-full p-6"):
-                                with ui.row().classes("w-full items-start justify-between no-wrap mb-4"):
+                            with ui.card().classes("bp-card bp-card-hover bp-account-card w-full p-6"):
+                                with ui.element("div").classes("bp-account-card-header mb-4"):
                                     with ui.row().classes("items-center gap-3 no-wrap"):
                                         with ui.element("div").classes("bg-blue-100 rounded-full p-3"):
                                             ui.icon("account_balance_wallet").classes("text-blue-600 text-2xl")
                                         with ui.column().classes("gap-0"):
                                             ui.label(account.name).classes("font-semibold text-lg text-gray-900")
                                             ui.label(f"{count} Transaktionen").classes("text-xs bp-muted")
-                                    with ui.row().classes("gap-1"):
+                                    with ui.element("div").classes("bp-account-actions"):
                                         ui.button(
                                             icon="edit",
                                             on_click=lambda account_id=account.id: open_edit_account_dialog(account_id),
@@ -922,8 +924,6 @@ class Pages:
             year, month = current_month()
             month_transactions = controller.dashboard_data(year=year, month=month).transactions
             with page_container("/budget"):
-                ui.label("Budget verwalten").classes("bp-title")
-
                 expense_categories = controller.list_categories(category_type="expense")
                 category_options = {category.id: category.name for category in expense_categories}
                 current_budgets = controller.list_budgets(year=year, month=month)
@@ -981,58 +981,63 @@ class Pages:
                     )
 
                 budgets = controller.list_budgets()
-                with ui.card().classes("bp-card w-full p-6"):
-                    ui.label("Budgets nach Kategorie").classes("bp-section-title mb-4")
+                with ui.expansion("Erfasste Budgets", icon="table_chart", value=False).classes("bp-card w-full p-2"):
                     if not budgets:
                         with ui.column().classes("w-full items-center gap-2 py-8"):
                             ui.icon("trending_up").classes("text-gray-300 text-6xl")
                             ui.label("Kein Budget festgelegt").classes("bp-muted")
                     else:
-                        with ui.column().classes("w-full gap-4"):
-                            for budget in budgets:
-                                relevant_transactions = (
-                                    month_transactions
-                                    if budget.year == year and budget.month == month
-                                    else controller.dashboard_data(year=budget.year, month=budget.month).transactions
-                                )
-                                spent = sum(
-                                    transaction.amount_chf
-                                    for transaction in relevant_transactions
-                                    if transaction.transaction_type == "expense"
-                                    and transaction.category_id == budget.category_id
-                                )
-                                remaining = round(budget.limit_chf - spent, 2)
-                                percent = (spent / budget.limit_chf * 100) if budget.limit_chf else 0
-                                status = "Überschritten" if remaining < 0 else "Warnung" if percent > 80 else "OK"
-                                tone = (
-                                    "text-red-600"
-                                    if remaining < 0
-                                    else "text-yellow-600"
-                                    if percent > 80
-                                    else "text-green-600"
-                                )
-                                with ui.element("div").classes("border border-gray-200 rounded-lg p-4 w-full"):
-                                    with ui.row().classes("w-full items-start justify-between gap-4"):
-                                        with ui.column().classes("gap-1"):
-                                            ui.label(
-                                                f"{budget.category.name} - {month_label(budget.year, budget.month)}"
-                                            ).classes("text-lg font-semibold")
-                                            ui.label(f"Limit: {money(budget.limit_chf)}").classes("text-sm bp-muted")
-                                        ui.label(status).classes(f"font-semibold {tone}")
-                                    with ui.grid(columns="repeat(auto-fit, minmax(160px, 1fr))").classes("w-full gap-4 mt-4"):
-                                        ui.label(f"Ausgaben: {money(spent)}").classes("text-sm bp-muted")
-                                        ui.label(f"Verbleibend: {money(remaining)}").classes(
-                                            f"text-sm font-semibold {tone}"
-                                        )
-                                        ui.label(f"Verbrauch: {percent:.1f}%").classes("text-sm bp-muted")
-                                    color_class = (
-                                        "bg-red-600"
+                        rows = []
+                        for budget in budgets:
+                            relevant_transactions = (
+                                month_transactions
+                                if budget.year == year and budget.month == month
+                                else controller.dashboard_data(year=budget.year, month=budget.month).transactions
+                            )
+                            spent = sum(
+                                transaction.amount_chf
+                                for transaction in relevant_transactions
+                                if transaction.transaction_type == "expense"
+                                and transaction.category_id == budget.category_id
+                            )
+                            remaining = round(budget.limit_chf - spent, 2)
+                            percent = (spent / budget.limit_chf * 100) if budget.limit_chf else 0
+                            status = "Überschritten" if remaining < 0 else "Warnung" if percent > 80 else "OK"
+                            rows.append(
+                                {
+                                    "category": budget.category.name,
+                                    "month": f"{budget.month:02d}",
+                                    "year": str(budget.year),
+                                    "limit": money(budget.limit_chf),
+                                    "spent": money(spent),
+                                    "remaining": money(remaining),
+                                    "status": f"{percent:.0f}% · {status}",
+                                    "status_class": (
+                                        "bp-negative"
                                         if remaining < 0
-                                        else "bg-yellow-500"
+                                        else "text-yellow-600"
                                         if percent > 80
-                                        else "bg-green-600"
-                                    )
-                                    progress_bar(percent, color_class)
+                                        else "bp-positive"
+                                    ),
+                                }
+                            )
+                        budget_table = ui.table(
+                            columns=[
+                                {"name": "category", "label": "Kategorie", "field": "category", "align": "left"},
+                                {"name": "month", "label": "Monat", "field": "month", "align": "left"},
+                                {"name": "year", "label": "Jahr", "field": "year", "align": "left"},
+                                {"name": "limit", "label": "Budgetlimit", "field": "limit", "align": "right"},
+                                {"name": "spent", "label": "Ausgaben", "field": "spent", "align": "right"},
+                                {"name": "remaining", "label": "Verbleibend", "field": "remaining", "align": "right"},
+                                {"name": "status", "label": "Verbrauch / Status", "field": "status", "align": "right"},
+                            ],
+                            rows=rows,
+                        ).classes("bp-table w-full").props("flat dense")
+                        budget_table.add_slot("body-cell-status", """
+                            <q-td :props="props">
+                                <span class="font-semibold" :class="props.row.status_class">{{ props.row.status }}</span>
+                            </q-td>
+                        """)
 
         @ui.page("/settings")
         def settings_redirect_page() -> None:
