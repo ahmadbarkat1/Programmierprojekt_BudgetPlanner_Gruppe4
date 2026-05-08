@@ -16,7 +16,7 @@ def register_categories_page(controller: FinanceController) -> None:
         transactions = controller.list_recent_transactions()
         categories = controller.list_categories()
         with page_container("/categories"):
-            page_title("Kategorien", "Ordne Einnahmen und Ausgaben sauber deinen Budget-Umschlägen zu.")
+            page_title("Kategorien", "Ordne Einnahmen und Ausgaben sauber deinen Budgets zu.")
 
             with ui.card().classes("bp-card w-full p-6"):
                 ui.label("Neue Kategorie erstellen").classes("bp-section-title mb-4")

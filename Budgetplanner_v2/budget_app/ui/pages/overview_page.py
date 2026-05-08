@@ -9,7 +9,7 @@ from nicegui import ui
 from ...utils.date_utils import current_year_month, month_name, month_short_label, previous_months
 from ...utils.format_utils import money
 from ..components.cards import envelope_card, stat_card
-from ..components.layout import empty_state, page_container, page_title
+from ..components.layout import empty_state, month_nav_card, page_container, page_title
 from ..components.tables import transaction_table
 from ..controllers import FinanceController
 from .shared import account_balance
@@ -21,8 +21,10 @@ def _chart_number_formatter() -> str:
 
 def register_overview_page(controller: FinanceController) -> None:
     @ui.page("/")
-    def dashboard_page() -> None:
-        year, month = current_year_month()
+    def dashboard_page(year: int | None = None, month: int | None = None) -> None:
+        current_year, current_month = current_year_month()
+        year = year or current_year
+        month = month or current_month
         data = controller.dashboard_data(year=year, month=month)
         all_transactions = controller.list_recent_transactions()
         accounts = controller.list_accounts()
@@ -60,7 +62,7 @@ def register_overview_page(controller: FinanceController) -> None:
                     with ui.column().classes("gap-1"):
                         ui.label("Noch verfügbares Monatsbudget").classes("text-sm text-blue-100")
                         ui.label(money(total_budget_remaining)).classes("text-5xl font-bold bp-stat-value")
-                        ui.label(f"{month_name(year, month)} · {current_usage:.0f}% der budgetierten Umschläge genutzt").classes("text-blue-100")
+                        ui.label(month_name(year, month)).classes("text-3xl font-bold text-blue-50")
                     ui.icon("savings").classes("text-7xl text-blue-100")
 
             if total_budget and total_budget_remaining < 0:
@@ -72,7 +74,8 @@ def register_overview_page(controller: FinanceController) -> None:
                         f"{money(unbudgeted_expenses)} Ausgaben liegen in Kategorien ohne Budget und werden nicht vom verfügbaren Budget abgezogen."
                     ).classes("text-sm text-amber-800")
 
-            with ui.element("div").classes("bp-grid-desktop"):
+            with ui.element("div").classes("bp-kpi-grid"):
+                month_nav_card("/", year, month)
                 stat_card("Einnahmen", money(data.overview.total_income_chf), "trending_up", "green", month_name(year, month))
                 stat_card("Ausgaben", money(data.overview.total_expenses_chf), "trending_down", "red", month_name(year, month))
                 stat_card("Kontostand", money(total_account_balance), "account_balance_wallet", "blue", "über alle Konten")

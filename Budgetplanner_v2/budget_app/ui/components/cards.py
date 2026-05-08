@@ -56,26 +56,25 @@ def envelope_card(status: BudgetStatus) -> None:
         "warning": "bp-envelope-warning",
         "danger": "bp-envelope-danger",
     }[tone]
-    status_text = {"ok": "im sicheren Bereich", "warning": "fast erreicht", "danger": "überschritten"}[tone]
     status_class = {"ok": "bp-positive", "warning": "bp-warning", "danger": "bp-negative"}[tone]
-    with ui.card().classes(f"bp-card bp-envelope-card {envelope_class} bp-card-hover w-full p-5"):
+    with ui.card().classes(f"bp-card bp-envelope-card {envelope_class} bp-card-hover w-full p-4"):
         with ui.row().classes("w-full items-start justify-between gap-3 no-wrap"):
             with ui.column().classes("gap-1"):
                 ui.label(budget.category.name).classes("text-lg font-bold text-gray-900")
                 ui.label(f"{budget.month:02d}.{budget.year}").classes("text-xs bp-muted")
-            ui.label(status_text).classes(f"bp-pill {status_class} bg-gray-50")
-        with ui.column().classes("gap-3 mt-5"):
+            ui.label(f"{percent:.0f}%").classes(f"text-xl font-bold {status_class}")
+        with ui.column().classes("gap-3 mt-3"):
             with ui.row().classes("w-full justify-between"):
                 ui.label("Verbraucht").classes("text-sm bp-muted")
-                ui.label(f"{percent:.0f}%").classes(f"text-sm font-semibold {status_class}")
+                ui.label(f"{money(status.spent_chf)} von {money(budget.limit_chf)}").classes("text-sm bp-muted")
             progress_bar(percent, tone)
-            with ui.grid(columns="repeat(3, minmax(0, 1fr))").classes("w-full gap-3 mt-2"):
-                with ui.column().classes("gap-0"):
+            with ui.element("div").classes("bp-compact-metrics"):
+                with ui.column().classes("bp-metric-box gap-0"):
                     ui.label("Budget").classes("text-xs bp-muted")
                     ui.label(money(budget.limit_chf)).classes("font-semibold bp-money")
-                with ui.column().classes("gap-0"):
+                with ui.column().classes("bp-metric-box gap-0"):
                     ui.label("Verbrauch").classes("text-xs bp-muted")
                     ui.label(money(status.spent_chf)).classes("font-semibold bp-money")
-                with ui.column().classes("gap-0"):
+                with ui.column().classes("bp-metric-box gap-0"):
                     ui.label("Rest").classes("text-xs bp-muted")
                     ui.label(money(status.remaining_chf)).classes(f"font-semibold bp-money {status_class}")

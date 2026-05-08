@@ -40,10 +40,10 @@ def register_transactions_page(controller: FinanceController) -> None:
                 ui.label("Typ").classes("font-semibold mb-2")
                 transaction_type = type_segmented("expense")
                 with ui.grid(columns="repeat(4, minmax(180px, 1fr))").classes("w-full gap-4 mt-4"):
-                    amount = number_input("Betrag (CHF)", "0.00")
                     transaction_date = ui.input("Datum", value=date.today().isoformat()).props("type=date").classes("w-full")
-                    account = ui.select(account_options, label="Konto").classes("w-full")
                     category = ui.select(category_options_for("expense"), label="Kategorie").classes("w-full")
+                    account = ui.select(account_options, label="Konto").classes("w-full")
+                    amount = number_input("Betrag (CHF)", "0.00")
                 description = ui.input("Beschreibung", placeholder="Optional").classes("w-full mt-4")
 
                 with ui.element("div").classes("bg-gray-50 border border-gray-200 rounded-lg p-4 mt-5"):
@@ -51,7 +51,7 @@ def register_transactions_page(controller: FinanceController) -> None:
                     ui.label("Ideal für Miete, Lohn, Abos oder quartalsweise Zahlungen.").classes("text-sm bp-muted")
                     with ui.grid(columns="repeat(2, minmax(180px, 1fr))").classes("w-full gap-4 mt-3"):
                         recurrence = ui.select(RECURRENCE_OPTIONS, label="Wiederholung", value="monthly").classes("w-full")
-                        occurrences = number_input("Anzahl Buchungen", "z.B. 6", 6)
+                        occurrences = number_input("Wiederholungen", "z.B. 6", 6)
 
                 def update_category_options() -> None:
                     category.set_options(category_options_for(str(transaction_type.value)))
@@ -109,7 +109,9 @@ def register_transactions_page(controller: FinanceController) -> None:
                     reset_button = ui.button("Filter zurücksetzen", icon="restart_alt").classes("bp-secondary-btn")
 
             with ui.card().classes("bp-card w-full p-6"):
-                ui.label("Transaktionsliste").classes("bp-section-title mb-4")
+                with ui.row().classes("w-full items-center justify-between gap-4"):
+                    ui.label("Transaktionsliste").classes("bp-section-title")
+                    group_by_month = ui.checkbox("Nach Monat gruppieren")
                 transaction_list = ui.column().classes("w-full")
 
                 def open_delete_dialog(transaction_id: int) -> None:
@@ -186,7 +188,20 @@ def register_transactions_page(controller: FinanceController) -> None:
                 def render_transaction_list() -> None:
                     transaction_list.clear()
                     with transaction_list:
-                        transaction_table(filtered_transactions(), "Keine Transaktionen gefunden.", on_edit=open_edit_dialog, on_delete=open_delete_dialog)
+                        visible_transactions = filtered_transactions()
+                        if not group_by_month.value:
+                            transaction_table(visible_transactions, "Keine Transaktionen gefunden.", on_edit=open_edit_dialog, on_delete=open_delete_dialog)
+                            return
+                        grouped: dict[str, list] = {}
+                        for transaction in visible_transactions:
+                            key = month_name(transaction.transaction_date.year, transaction.transaction_date.month)
+                            grouped.setdefault(key, []).append(transaction)
+                        if not grouped:
+                            transaction_table([], "Keine Transaktionen gefunden.", on_edit=open_edit_dialog, on_delete=open_delete_dialog)
+                            return
+                        for period, period_transactions in grouped.items():
+                            ui.label(period).classes("text-lg font-bold text-gray-900 mt-4")
+                            transaction_table(period_transactions, "Keine Transaktionen gefunden.", on_edit=open_edit_dialog, on_delete=open_delete_dialog)
 
                 def reset_filters() -> None:
                     filter_type.value = ""
@@ -197,5 +212,6 @@ def register_transactions_page(controller: FinanceController) -> None:
                 filter_type.on_value_change(render_transaction_list)
                 filter_category.on_value_change(render_transaction_list)
                 filter_month.on_value_change(render_transaction_list)
+                group_by_month.on_value_change(render_transaction_list)
                 reset_button.on_click(reset_filters)
                 render_transaction_list()

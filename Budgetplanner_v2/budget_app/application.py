@@ -84,4 +84,4 @@ class BudgetPlannerApplication:
         available_port = _find_available_port(host, port)
         if available_port != port:
             print(f"Port {port} ist bereits belegt. Starte Budget Planner stattdessen auf Port {available_port}.")
-        ui.run(host=host, port=available_port, reload=reload)
+        ui.run(host=host, port=available_port, reload=reload, title="Budget Planner")

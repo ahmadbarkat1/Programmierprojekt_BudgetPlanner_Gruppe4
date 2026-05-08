@@ -43,6 +43,12 @@ def previous_month(year: int, month: int) -> tuple[int, int]:
     return year, month - 1
 
 
+def next_month(year: int, month: int) -> tuple[int, int]:
+    if month == 12:
+        return year + 1, 1
+    return year, month + 1
+
+
 def previous_months(year: int, month: int, count: int = 6) -> list[tuple[int, int]]:
     months: list[tuple[int, int]] = []
     cursor_year = year

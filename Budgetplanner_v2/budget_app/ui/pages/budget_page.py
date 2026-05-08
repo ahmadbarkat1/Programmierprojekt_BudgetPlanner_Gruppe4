@@ -8,14 +8,16 @@ from ...utils.date_utils import current_year_month, month_name
 from ...utils.format_utils import money, parse_float, parse_int
 from ..components.cards import envelope_card, stat_card
 from ..components.forms import number_input
-from ..components.layout import empty_state, page_container, page_title
+from ..components.layout import empty_state, month_nav_card, page_container, page_title
 from ..controllers import FinanceController
 
 
 def register_budget_page(controller: FinanceController) -> None:
     @ui.page("/budget")
-    def budget_page() -> None:
-        year, month = current_year_month()
+    def budget_page(year: int | None = None, month: int | None = None) -> None:
+        current_year, current_month = current_year_month()
+        year = year or current_year
+        month = month or current_month
         data = controller.dashboard_data(year=year, month=month)
         expense_categories = controller.list_categories(category_type="expense")
         category_options = {category.id: category.name for category in expense_categories}
@@ -26,13 +28,14 @@ def register_budget_page(controller: FinanceController) -> None:
         current_usage = (current_expenses / current_budget_limit * 100) if current_budget_limit else 0
 
         with page_container("/budget"):
-            page_title("Budget", "Plane deine Monatsumschläge und sieh sofort, welche Kategorien Luft haben.")
+            page_title("Budget", "Plane dein Monatsbudget nach Kategorie und sieh sofort, wo du noch Luft hast.")
 
-            with ui.element("div").classes("bp-grid-desktop"):
-                stat_card("Budgetlimit", money(current_budget_limit), "inventory_2", "blue", month_name(year, month))
-                stat_card("Ausgaben", money(current_expenses), "trending_down", "red", "im aktuellen Monat")
-                stat_card("Verbleibend", money(current_remaining), "savings", "green" if current_remaining >= 0 else "red")
-                stat_card("Verbrauch", f"{current_usage:.0f}%", "percent", "amber" if current_usage >= 80 else "green")
+            with ui.element("div").classes("bp-kpi-grid"):
+                month_nav_card("/budget", year, month)
+                stat_card("Budget", money(current_budget_limit), "inventory_2", "blue", month_name(year, month))
+                stat_card("Ausgaben", money(current_expenses), "trending_down", "red", month_name(year, month))
+                stat_card("Verbleibend", money(current_remaining), "savings", "green" if current_remaining >= 0 else "red", month_name(year, month))
+                stat_card("Verbrauch", f"{current_usage:.0f}%", "percent", "amber" if current_usage >= 80 else "green", month_name(year, month))
 
             with ui.element("div").classes("bp-two-col"):
                 with ui.card().classes("bp-card w-full p-6"):
@@ -41,8 +44,8 @@ def register_budget_page(controller: FinanceController) -> None:
                     with ui.grid(columns="repeat(2, minmax(0, 1fr))").classes("w-full gap-4"):
                         budget_month = number_input("Monat", "1-12", month)
                         budget_year = number_input("Jahr", str(year), year)
-                    limit = number_input("Limit pro Kategorie (CHF)", "0.00")
                     budget_category = ui.select(category_options, label="Ausgabenkategorie").classes("w-full")
+                    limit = number_input("Betrag (CHF)", "0.00")
 
                     def save_budget() -> None:
                         try:
@@ -85,7 +88,7 @@ def register_budget_page(controller: FinanceController) -> None:
                     ui.button("Budget vom Vormonat übernehmen", icon="content_copy", on_click=copy_previous_budget).classes("bp-primary-btn mt-4")
 
             with ui.card().classes("bp-card w-full p-6"):
-                ui.label("Umschläge für diesen Monat").classes("bp-section-title")
+                ui.label("Budgets für diesen Monat").classes("bp-section-title")
                 if not data.budget_statuses:
                     empty_state("inventory_2", "Noch keine Budgets für diesen Monat.", "Lege dein erstes Budget fest oder übernimm den Vormonat.")
                 else:
@@ -98,6 +101,17 @@ def register_budget_page(controller: FinanceController) -> None:
                 if not budgets:
                     empty_state("inventory_2", "Kein Budget festgelegt.", "Lege dein erstes Budget fest.")
                 else:
+                    group_by_month = ui.checkbox("Nach Monat gruppieren").classes("mb-3")
+                    budget_table_area = ui.column().classes("w-full")
+
+                    columns = [
+                        {"name": "period", "label": "Monat", "field": "period", "align": "left"},
+                        {"name": "category", "label": "Kategorie", "field": "category", "align": "left"},
+                        {"name": "limit", "label": "Budget", "field": "limit", "align": "right"},
+                        {"name": "spent", "label": "Verbrauch", "field": "spent", "align": "right"},
+                        {"name": "remaining", "label": "Verbleibend", "field": "remaining", "align": "right"},
+                        {"name": "status", "label": "Auslastung", "field": "status", "align": "right"},
+                    ]
                     rows = []
                     for budget in budgets:
                         month_data = controller.dashboard_data(year=budget.year, month=budget.month)
@@ -110,8 +124,8 @@ def register_budget_page(controller: FinanceController) -> None:
                         percent = (spent / budget.limit_chf * 100) if budget.limit_chf else 0
                         rows.append(
                             {
-                                "category": budget.category.name,
                                 "period": f"{budget.month:02d}.{budget.year}",
+                                "category": budget.category.name,
                                 "limit": money(budget.limit_chf),
                                 "spent": money(spent),
                                 "remaining": money(remaining),
@@ -119,25 +133,33 @@ def register_budget_page(controller: FinanceController) -> None:
                                 "status_class": "bp-negative" if remaining < 0 else "bp-warning" if percent >= 80 else "bp-positive",
                             }
                         )
-                    table = ui.table(
-                        columns=[
-                            {"name": "category", "label": "Kategorie", "field": "category", "align": "left"},
-                            {"name": "period", "label": "Monat", "field": "period", "align": "left"},
-                            {"name": "limit", "label": "Budget", "field": "limit", "align": "right"},
-                            {"name": "spent", "label": "Verbrauch", "field": "spent", "align": "right"},
-                            {"name": "remaining", "label": "Verbleibend", "field": "remaining", "align": "right"},
-                            {"name": "status", "label": "Auslastung", "field": "status", "align": "right"},
-                        ],
-                        rows=rows,
-                    ).classes("bp-table w-full").props("flat")
-                    table.add_slot(
-                        "body-cell-status",
-                        """
-                        <q-td :props="props">
-                            <span class="font-semibold" :class="props.row.status_class">{{ props.row.status }}</span>
-                        </q-td>
-                        """,
-                    )
+
+                    def render_table(table_rows: list[dict[str, str]]) -> None:
+                        table = ui.table(columns=columns, rows=table_rows).classes("bp-table w-full").props("flat")
+                        table.add_slot(
+                            "body-cell-status",
+                            """
+                            <q-td :props="props">
+                                <span class="font-semibold" :class="props.row.status_class">{{ props.row.status }}</span>
+                            </q-td>
+                            """,
+                        )
+
+                    def render_budget_tables() -> None:
+                        budget_table_area.clear()
+                        with budget_table_area:
+                            if not group_by_month.value:
+                                render_table(rows)
+                                return
+                            grouped: dict[str, list[dict[str, str]]] = {}
+                            for row in rows:
+                                grouped.setdefault(row["period"], []).append(row)
+                            for period, period_rows in grouped.items():
+                                ui.label(period).classes("text-lg font-bold text-gray-900 mt-4")
+                                render_table(period_rows)
+
+                    group_by_month.on_value_change(render_budget_tables)
+                    render_budget_tables()
 
     @ui.page("/settings")
     def settings_redirect_page() -> None:
