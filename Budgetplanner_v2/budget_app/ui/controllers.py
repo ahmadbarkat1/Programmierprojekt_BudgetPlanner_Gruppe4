@@ -16,6 +16,7 @@ from ..services.account_service import AccountService
 from ..services.budget_service import BudgetService, BudgetStatus
 from ..services.category_service import CategoryService
 from ..services.finance_service import FinanceOverview, FinanceService
+from ..services.recurrence_service import RecurrenceService
 from ..services.transaction_service import TransactionService
 
 
@@ -125,6 +126,41 @@ class FinanceController:
             category_id=category_id,
         )
 
+    def create_recurring_transactions(
+        self,
+        amount_chf: float,
+        transaction_type: str,
+        transaction_date: date,
+        description: str,
+        account_id: int,
+        category_id: int,
+        frequency: str,
+        occurrences: int,
+    ) -> List[Transaction]:
+        dates = RecurrenceService.dates(transaction_date, frequency, occurrences)
+        for current_date in dates:
+            self.transaction_service.validate_transaction(
+                amount_chf=amount_chf,
+                transaction_type=transaction_type,
+                transaction_date=current_date,
+                account_id=account_id,
+                category_id=category_id,
+            )
+        created: list[Transaction] = []
+        for index, current_date in enumerate(dates):
+            suffix = "" if index == 0 else f" ({index + 1}/{occurrences})"
+            created.append(
+                self.create_transaction(
+                    amount_chf=amount_chf,
+                    transaction_type=transaction_type,
+                    transaction_date=current_date,
+                    description=f"{description}{suffix}".strip(),
+                    account_id=account_id,
+                    category_id=category_id,
+                )
+            )
+        return created
+
     def update_transaction(
         self,
         transaction_id: int,
@@ -156,3 +192,6 @@ class FinanceController:
             user_id=self.default_user().id,
             category_id=category_id,
         )
+
+    def copy_previous_month_budget(self, year: int, month: int) -> List[Budget]:
+        return self.budget_service.copy_previous_month(self.default_user().id, target_year=year, target_month=month)

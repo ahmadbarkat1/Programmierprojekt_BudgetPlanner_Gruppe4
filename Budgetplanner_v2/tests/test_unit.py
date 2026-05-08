@@ -1,5 +1,6 @@
 from budget_app.services.budget_service import BudgetService
 from budget_app.services.finance_service import FinanceService
+from budget_app.services.recurrence_service import RecurrenceService
 
 
 def test_finance_overview(sample_account, sample_transactions):
@@ -35,3 +36,14 @@ def test_budget_status_exceeded(sample_budget, sample_transactions):
     assert status.remaining_chf == -20.0
     assert status.is_exceeded is True
 
+
+def test_quarterly_recurrence_dates():
+    dates = RecurrenceService.dates(sample_transactions_start_date(), "quarterly", 4)
+
+    assert [value.isoformat() for value in dates] == ["2026-01-31", "2026-04-30", "2026-07-30", "2026-10-30"]
+
+
+def sample_transactions_start_date():
+    from datetime import date
+
+    return date(2026, 1, 31)

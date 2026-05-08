@@ -7,6 +7,7 @@ from typing import Iterable, List, Optional
 
 from ..data_access.dao import BudgetDAO, CategoryDAO
 from ..domain.models import Budget, Transaction
+from ..utils.date_utils import previous_month
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,36 @@ class BudgetService:
     def list_budgets(self, user_id: int, year: Optional[int] = None, month: Optional[int] = None) -> List[Budget]:
         return self.budget_dao.list_for_user(user_id=user_id, year=year, month=month)
 
+    def copy_previous_month(self, user_id: int, target_year: int, target_month: int) -> List[Budget]:
+        """Copy missing budgets from the previous month into the target month."""
+        source_year, source_month = previous_month(target_year, target_month)
+        source_budgets = self.list_budgets(user_id=user_id, year=source_year, month=source_month)
+        if not source_budgets:
+            raise ValueError("Im Vormonat wurden keine Budgets gefunden.")
+
+        copied: list[Budget] = []
+        for source_budget in source_budgets:
+            existing = self.budget_dao.get_by_category_month(
+                user_id,
+                source_budget.category_id,
+                target_year,
+                target_month,
+            )
+            if existing is not None:
+                continue
+            copied.append(
+                self.create_budget(
+                    month=target_month,
+                    year=target_year,
+                    limit_chf=source_budget.limit_chf,
+                    user_id=user_id,
+                    category_id=source_budget.category_id,
+                )
+            )
+        if not copied:
+            raise ValueError("Für diesen Monat sind die Vormonatsbudgets bereits vorhanden.")
+        return copied
+
     def spent_for_budget(self, budget: Budget, transactions: Iterable[Transaction]) -> float:
         spent = sum(
             transaction.amount_chf
@@ -77,4 +108,3 @@ class BudgetService:
     def statuses(self, budgets: Iterable[Budget], transactions: Iterable[Transaction]) -> List[BudgetStatus]:
         transaction_list = list(transactions)
         return [self.status_for_budget(budget, transaction_list) for budget in budgets]
-

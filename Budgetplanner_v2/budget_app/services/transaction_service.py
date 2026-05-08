@@ -55,6 +55,16 @@ class TransactionService:
             if budget is None:
                 raise ValueError("Erfasse zuerst ein Budget für diese Kategorie.")
 
+    def validate_transaction(
+        self,
+        amount_chf: float,
+        transaction_type: str,
+        transaction_date: date,
+        account_id: int,
+        category_id: int,
+    ) -> None:
+        self._validate_transaction(amount_chf, transaction_type, transaction_date, account_id, category_id)
+
     def create_transaction(
         self,
         amount_chf: float,
