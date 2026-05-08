@@ -1,54 +1,56 @@
-# Budgetplanner
+# 📊 Budgetplanner
 
-Browserbasierte Python-Anwendung zur Verwaltung persoenlicher Finanzen. Das Projekt
-orientiert sich an der Struktur des Pizzeria Reference Project aus dem Modul
-Objektorientierte Programmierung.
+Der Budgetplanner ist eine browserbasierte Python-Anwendung zur Verwaltung persönlicher Finanzen.  
+Das Projekt orientiert sich an der Struktur des Pizzeria Reference Project aus dem Modul Objektorientierte Programmierung.
 
-## Ziel
+Die Anwendung hilft Benutzern dabei Einnahmen, Ausgaben, Konten, Kategorien und Monatsbudgets übersichtlich zu verwalten. Dadurch entsteht eine klare Übersicht über die finanzielle Situation und mögliche Budgetüberschreitungen werden schneller sichtbar.
 
-Der Budgetplanner hilft Benutzern dabei, Einnahmen, Ausgaben, Konten, Kategorien
-und Monatsbudgets zu erfassen. Die Anwendung zeigt eine Finanzuebersicht und warnt
-indirekt ueber den Budgetstatus, wenn Ausgaben ein Budget ueberschreiten.
+---
 
-## Hauptfunktionen
+## 💡 Problemstellung
 
-- Konten verwalten
-- Kategorien fuer Einnahmen und Ausgaben verwalten
-- Einnahmen und Ausgaben erfassen
-- Finanzuebersicht mit Einnahmen, Ausgaben und Saldo anzeigen
-- Monatsbudgets pro Ausgabenkategorie erfassen
+Viele Personen verlieren im Alltag schnell den Überblick über ihre Finanzen:
+
+- Einnahmen und Ausgaben werden nicht konsequent erfasst.
+- Kleine Ausgaben summieren sich über den Monat.
+- Budgetüberschreitungen werden oft zu spät erkannt.
+- Mehrere Konten und Kategorien machen die Übersicht schwieriger.
+- Fehlende Struktur bei der persönlichen Finanzplanung.
+
+---
+
+## ✅ Lösung
+
+Der Budgetplanner bietet eine einfache und strukturierte Lösung:
+
+- Einnahmen und Ausgaben zentral erfassen
+- Transaktionen Kategorien und Konten zuordnen
+- Finanzübersicht mit Einnahmen, Ausgaben und Saldo anzeigen
+- Monatsbudgets pro Ausgabenkategorie festlegen
 - Budgetverbrauch und Restbudget anzeigen
-- Speicherung in SQLite ueber SQLModel ORM
+- Hinweise bei Budgetüberschreitungen anzeigen
+- Daten dauerhaft in einer SQLite-Datenbank speichern
 
-## Projektstruktur
+---
 
-```text
-budget_app/
-├── __main__.py
-├── application.py
-├── data_access/
-│   ├── dao.py
-│   ├── db.py
-│   └── seed.py
-├── domain/
-│   └── models.py
-├── services/
-│   ├── account_service.py
-│   ├── budget_service.py
-│   ├── category_service.py
-│   ├── finance_service.py
-│   └── transaction_service.py
-└── ui/
-    ├── controllers.py
-    └── pages.py
+## 🛠 Hauptfunktionen
 
-tests/
-├── conftest.py
-├── test_integration.py
-└── test_unit.py
-```
+- Konten erfassen, bearbeiten und löschen
+- Kategorien für Einnahmen und Ausgaben verwalten
+- Einnahmen und Ausgaben erfassen
+- Transaktionen bearbeiten und löschen
+- Finanzübersicht mit Einnahmen, Ausgaben und Saldo anzeigen
+- Kontostände berechnen und anzeigen
+- Monatsbudgets pro Ausgabenkategorie erfassen
+- Budgetverbrauch, Restbudget und Überschreitungen anzeigen
+- Transaktionen nach Typ, Kategorie und Monat filtern
+- Diagramme zur Visualisierung der Ausgaben anzeigen
+- Monatsvergleich von Einnahmen und Ausgaben anzeigen
+- Speicherung in SQLite über SQLModel ORM
 
-## Architektur
+---
+
+## 🧱 Architektur
 
 Die Anwendung verwendet eine Schichtenarchitektur wie im Pizzeria-Projekt:
 
@@ -56,26 +58,33 @@ Die Anwendung verwendet eine Schichtenarchitektur wie im Pizzeria-Projekt:
 NiceGUI Pages -> Controller -> Services -> DAO -> SQLModel/SQLite
 ```
 
-- Die UI enthaelt keine Businesslogik.
-- Controller koordinieren Benutzeraktionen.
-- Services enthalten Validierung und Berechnungen.
-- DAOs kapseln Datenbankzugriffe.
-- SQLModel bildet Python-Klassen auf Datenbanktabellen ab.
+Die Verantwortlichkeiten sind klar getrennt:
 
-## OOP- und Python-Konzepte
+- `ui/pages.py`: Benutzeroberfläche, Formulare, Navigation und Tabellen
+- `ui/controllers.py`: Vermittlung zwischen UI und Services
+- `services/`: Businesslogik, Validierung und Berechnungen
+- `data_access/dao.py`: Datenbankzugriffe über DAO-Klassen
+- `data_access/db.py`: Datenbank-Facade für Engine, Schema und Seed-Daten
+- `domain/models.py`: SQLModel-Klassen und Beziehungen
+
+---
+
+## 🧩 OOP- und Python-Konzepte
 
 | Konzept | Umsetzung |
 | --- | --- |
 | Klassen und Objekte | `User`, `Account`, `Category`, `Transaction`, `Budget` |
-| Kapselung | Zugriff auf Datenbank nur ueber DAOs, Regeln in Services |
+| Kapselung | Datenbankzugriff nur über DAOs, Regeln in Services |
 | Single Responsibility Principle | Jede Schicht hat eine klare Aufgabe |
 | ORM | SQLModel-Modelle mit Foreign Keys und Relationships |
 | DAO Pattern | `AccountDAO`, `CategoryDAO`, `TransactionDAO`, `BudgetDAO` |
 | Facade Pattern | `Database` kapselt Engine, Schema und Session Scope |
-| MVC-aehnliche Struktur | Pages, Controller, Services/Modelle |
-| Testing | Unit Tests fuer Berechnungen, Integration Tests fuer Datenbank |
+| MVC-ähnliche Struktur | Pages, Controller, Services und Modelle |
+| Testing | Unit Tests und Integration Tests |
 
-## Datenmodell
+---
+
+## 🗃 Datenmodell
 
 ```text
 User 1 ---- * Account
@@ -86,56 +95,146 @@ Category 1 ---- * Transaction
 Category 1 ---- * Budget
 ```
 
-Einnahmen und Ausgaben werden bewusst nicht als Unterklassen modelliert. Beide
-besitzen dieselben Attribute. Der Unterschied wird ueber `transaction_type`
-(`income` oder `expense`) abgebildet. Das haelt das Modell einfach und folgt KISS.
+Einnahmen und Ausgaben werden bewusst nicht als separate Unterklassen modelliert.  
+Beide besitzen dieselben Attribute. Der Unterschied wird über `transaction_type` (`income` oder `expense`) abgebildet.
 
-## Installation
+Diese Lösung hält das Modell einfach, vermeidet unnötige Vererbung und ist für die Anwendung ausreichend nachvollziehbar.
+
+---
+
+## 📁 Projektstruktur
+
+```text
+budget_app/
+|-- __main__.py
+|-- application.py
+|-- data_access/
+|   |-- dao.py
+|   |-- db.py
+|   `-- seed.py
+|-- domain/
+|   `-- models.py
+|-- services/
+|   |-- account_service.py
+|   |-- budget_service.py
+|   |-- category_service.py
+|   |-- finance_service.py
+|   `-- transaction_service.py
+`-- ui/
+    |-- controllers.py
+    `-- pages.py
+
+tests/
+|-- conftest.py
+|-- test_integration.py
+|-- test_unit.py
+`-- test_validation.py
+```
+
+---
+
+## ⚙️ Installation
 
 ```bash
 python -m venv .venv
+```
+
+Windows:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+macOS / Linux:
+
+```bash
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Start
+---
+
+## ▶️ Start
+
+Die App kann über den Kompatibilitäts-Startpunkt gestartet werden:
+
+```bash
+python app.py
+```
+
+Alternativ kann das Paket direkt gestartet werden:
 
 ```bash
 python -m budget_app
 ```
 
-Danach ist die App standardmaessig unter `http://localhost:8080` erreichbar.
+Danach ist die App standardmässig unter folgender Adresse erreichbar:
 
-## Tests
+```text
+http://localhost:8080
+```
+
+---
+
+## 🧪 Tests
+
+Die Tests können mit folgendem Befehl ausgeführt werden:
 
 ```bash
 pytest
 ```
 
-## Team
+Die Tests prüfen unter anderem:
+
+- Finanzübersicht mit Einnahmen, Ausgaben und Saldo
+- Kontostandberechnung
+- Budgetstatus und Budgetüberschreitung
+- Validierung ungültiger Transaktionen
+- Integration mit SQLite-In-Memory-Datenbank
+
+---
+
+## 🎤 Hinweise zur Präsentation
+
+Wichtige Code-Stellen für die Erklärung:
+
+- `budget_app/domain/models.py`: ORM-Modelle und Beziehungen
+- `budget_app/data_access/dao.py`: DAO Pattern und Datenbankzugriffe
+- `budget_app/services/finance_service.py`: Berechnung von Einnahmen, Ausgaben und Saldo
+- `budget_app/services/budget_service.py`: Budgetstatus und Budgetüberschreitung
+- `budget_app/services/transaction_service.py`: Validierung von Transaktionen
+- `budget_app/ui/controllers.py`: Verbindung zwischen UI und Services
+- `budget_app/ui/pages.py`: NiceGUI-Oberfläche
+
+Empfohlene Präsentationslogik:
+
+1. Kurz Problem und Ziel erklären
+2. Browser-Demo zeigen
+3. Architektur mit Schichten erklären
+4. ORM-Modell und Beziehungen zeigen
+5. Services und DAO Pattern erklären
+6. Tests und Validierung erwähnen
+
+---
+
+## 👥 Autoren
 
 - Sven Birrer
 - Lorik Kele
 - Ahmad Barkat
 
-## Hinweise zur Praesentation
+---
 
-Die wichtigsten Codepfade fuer die Erklaerung:
+## 📜 Lizenz
+Dieses Projekt wird im Rahmen eines Schulprojekts erstellt.
 
-- `budget_app/domain/models.py`: ORM-Modelle und Beziehungen
-- `budget_app/data_access/dao.py`: DAO Pattern und Datenbankzugriffe
-- `budget_app/services/finance_service.py`: Berechnung von Einnahmen, Ausgaben und Saldo
-- `budget_app/services/budget_service.py`: Budgetstatus und Budgetueberschreitung
-- `budget_app/ui/pages.py`: NiceGUI-Oberflaeche
+---
 
-## ORM Umsetzung
+## 📌 Hinweis
 
-Das Datenmodell wird mit SQLModel als ORM umgesetzt.
+Dieses Projekt wurde im Rahmen des Moduls Objektorientierte Programmierung erstellt.
 
-- Jede Klasse entspricht einer Datenbanktabelle
-- Beziehungen werden über Foreign Keys definiert
-- Navigation erfolgt über Relationship()
+---
 
-Beispiel:
-- account_id verbindet Transaction mit Account
-- Relationship erlaubt Zugriff auf das ganze Objekt
+## 💸 Viel Erfolg beim Planen!
