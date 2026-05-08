@@ -1,0 +1,170 @@
+@startuml
+title Budget Planner – Improved Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+' ======================================================
+' DOMAIN ENTITIES
+' ======================================================
+package "Domain Entities" {
+
+  class User <<entity>> {
+    - _user_id: int
+    - _name: str
+    - _email: str
+    --
+    + get_name(): str
+    + set_name(name: str): None
+    + get_email(): str
+    + set_email(email: str): None
+  }
+
+  class Account <<entity>> {
+    - _account_id: int
+    - _name: str
+    - _start_balance: float
+    - _current_balance: float
+    - _user_id: int
+    --
+    + add_transaction(transaction: Transaction): None
+    + calculate_balance(): float
+    + get_current_balance(): float
+  }
+
+  class Transaction <<entity>> {
+    - _transaction_id: int
+    - _amount: float
+    - _date: date
+    - _description: str
+    - _type: str
+    - _account_id: int
+    - _category_id: int
+    --
+    + get_amount(): float
+    + set_amount(amount: float): None
+    + get_type(): str
+    + set_type(type: str): None
+  }
+
+  class Category <<entity>> {
+    - _category_id: int
+    - _name: str
+    - _category_type: str
+    - _user_id: int
+    --
+    + get_name(): str
+    + set_name(name: str): None
+    + get_category_type(): str
+    + set_category_type(category_type: str): None
+  }
+
+  class Budget <<entity>> {
+    - _budget_id: int
+    - _month: str
+    - _limit_amount: float
+    - _user_id: int
+    - _category_id: int
+    --
+    + calculate_remaining(spent_amount: float): float
+    + is_exceeded(spent_amount: float): bool
+    + get_limit_amount(): float
+    + set_limit_amount(amount: float): None
+  }
+}
+
+' ======================================================
+' SERVICES
+' ======================================================
+package "Services" {
+
+  class BudgetService <<service>> {
+    + calculate_spent_amount(budget_id: int): float
+    + calculate_remaining_budget(budget_id: int): float
+    + is_budget_exceeded(budget_id: int): bool
+  }
+
+  class FinanceReportService <<service>> {
+    + calculate_total_income(user_id: int): float
+    + calculate_total_expenses(user_id: int): float
+    + calculate_current_balance(user_id: int): float
+    + generate_summary(user_id: int): str
+  }
+}
+
+' ======================================================
+' DAO LAYER
+' ======================================================
+package "DAO Layer" {
+
+  class UserDAO <<dao>> {
+    + create(user: User): User
+    + get_by_id(user_id: int): User
+  }
+
+  class AccountDAO <<dao>> {
+    + create(account: Account): Account
+    + get_by_user(user_id: int): list[Account]
+  }
+
+  class TransactionDAO <<dao>> {
+    + create(transaction: Transaction): Transaction
+    + get_by_account(account_id: int): list[Transaction]
+    + get_by_category(category_id: int): list[Transaction]
+  }
+
+  class CategoryDAO <<dao>> {
+    + create(category: Category): Category
+    + get_by_user(user_id: int): list[Category]
+  }
+
+  class BudgetDAO <<dao>> {
+    + create(budget: Budget): Budget
+    + get_by_user(user_id: int): list[Budget]
+    + get_by_category(category_id: int): list[Budget]
+  }
+}
+
+' ======================================================
+' DOMAIN RELATIONSHIPS
+' ======================================================
+User "1" -- "0..*" Account : owns
+User "1" -- "0..*" Category : defines
+User "1" -- "0..*" Budget : defines
+
+Account "1" *-- "0..*" Transaction : contains
+
+Category "1" -- "0..*" Transaction : categorizes
+Category "1" -- "0..*" Budget : has
+
+' Wichtig: Keine direkte Verbindung Transaction -> Budget.
+' Budget-Ausgaben werden über Category + Transaction berechnet.
+
+' ======================================================
+' SERVICE DEPENDENCIES
+' ======================================================
+BudgetService ..> BudgetDAO : uses
+BudgetService ..> TransactionDAO : uses
+BudgetService ..> CategoryDAO : uses
+
+FinanceReportService ..> AccountDAO : uses
+FinanceReportService ..> TransactionDAO : uses
+FinanceReportService ..> BudgetDAO : uses
+
+' ======================================================
+' DAO DEPENDENCIES
+' ======================================================
+UserDAO ..> User : persists
+AccountDAO ..> Account : persists
+TransactionDAO ..> Transaction : persists
+CategoryDAO ..> Category : persists
+BudgetDAO ..> Budget : persists
+
+note bottom
+Derived values such as totalIncome, totalExpenses,
+remainingBudget and comparisons are not stored
+as entity attributes. They are calculated by services.
+end note
+
+@enduml
