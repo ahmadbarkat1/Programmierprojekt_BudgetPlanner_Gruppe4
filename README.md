@@ -227,13 +227,7 @@ Empfohlene Präsentationslogik:
 ---
 
 ## 📜 Lizenz
-Dieses Projekt wird im Rahmen eines Schulprojekts erstellt.
-
----
-
-## 📌 Hinweis
-
-Dieses Projekt wurde im Rahmen des Moduls Objektorientierte Programmierung erstellt.
+Dieses Projekt wird im Rahmen eines Schulprojekt (Modul Objektorientierte Programmierung) erstellt.
 
 ---
 
