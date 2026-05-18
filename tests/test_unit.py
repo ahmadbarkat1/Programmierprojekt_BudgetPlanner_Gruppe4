@@ -1,3 +1,4 @@
+from budget_app.domain.models import Account
 from budget_app.services.budget_service import BudgetService
 from budget_app.services.finance_service import FinanceService
 from budget_app.services.recurrence_service import RecurrenceService
@@ -16,6 +17,19 @@ def test_account_balance(sample_account, sample_transactions):
     finance = FinanceService()
 
     assert finance.account_balance(sample_account, sample_transactions) == 3080.0
+
+
+def test_finance_overview_without_transactions_uses_starting_balances():
+    accounts = [
+        Account(id=1, name="Bankkonto", account_type="Bankkonto", starting_balance_chf=1200.0, user_id=1),
+        Account(id=2, name="Bargeld", account_type="Bargeld", starting_balance_chf=150.0, user_id=1),
+    ]
+
+    overview = FinanceService().overview(accounts, [])
+
+    assert overview.total_income_chf == 0.0
+    assert overview.total_expenses_chf == 0.0
+    assert overview.balance_chf == 1350.0
 
 
 def test_budget_status_not_exceeded(sample_budget, sample_transactions):
