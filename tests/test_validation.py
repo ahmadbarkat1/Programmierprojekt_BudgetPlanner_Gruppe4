@@ -2,18 +2,19 @@ import pytest
 from datetime import date
 
 from budget_app.services.transaction_service import TransactionService
-
-
-class FailingDAO:
-    def get_by_id(self, item_id):
-        raise AssertionError("DAO should not be called for basic validation failures")
+from budget_app.data_access.dao import AccountDAO, CategoryDAO, TransactionDAO
+from budget_app.data_access.db import Database
 
 
 def setup_services():
+    db = Database(database_url="sqlite:///:memory:")
+    db.init_schema_and_seed()
+    engine = db.engine
+
     return TransactionService(
-        transaction_dao=FailingDAO(),
-        account_dao=FailingDAO(),
-        category_dao=FailingDAO(),
+        transaction_dao=TransactionDAO(engine),
+        account_dao=AccountDAO(engine),
+        category_dao=CategoryDAO(engine),
     )
 
 
