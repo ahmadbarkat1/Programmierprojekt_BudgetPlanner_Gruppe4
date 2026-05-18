@@ -16,8 +16,8 @@ def test_seeded_database_contains_demo_accounts_and_categories():
     account_names = {account.name for account in AccountDAO(engine).list_for_user(user.id)}
     category_names = {category.name for category in CategoryDAO(engine).list_for_user(user.id)}
 
-    assert {"Bankkonto", "Bargeld"}.issubset(account_names)
-    assert {"Lohn", "Lebensmittel", "Miete"}.issubset(category_names)
+    assert {"Studentenkonto", "Bargeld"}.issubset(account_names)
+    assert {"Nebenjob", "Nachhilfe", "Fast Food", "Ausgang", "Padel"}.issubset(category_names)
 
 
 def test_saving_transaction_persists_it_for_recent_query():
@@ -44,8 +44,8 @@ def test_saving_transaction_persists_it_for_recent_query():
     recent_transactions = transaction_dao.list_recent()
 
     assert saved.id is not None
-    assert [transaction.id for transaction in recent_transactions] == [saved.id]
-    assert recent_transactions[0].description == "Persistenztest"
+    assert saved.id in [transaction.id for transaction in recent_transactions]
+    assert any(transaction.description == "Persistenztest" for transaction in recent_transactions)
 
 
 def test_empty_database_returns_no_recent_transactions():
@@ -87,4 +87,6 @@ def test_monthly_transaction_query_returns_only_matching_month():
 
     may_transactions = transaction_dao.list_for_month(year=2026, month=5, user_id=user.id)
 
-    assert [transaction.id for transaction in may_transactions] == [may_transaction.id]
+    assert may_transaction.id in [transaction.id for transaction in may_transactions]
+    assert all(transaction.transaction_date.month == 5 for transaction in may_transactions)
+    assert all(transaction.transaction_date.year == 2026 for transaction in may_transactions)

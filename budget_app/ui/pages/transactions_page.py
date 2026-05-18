@@ -32,7 +32,7 @@ def register_transactions_page(controller: FinanceController) -> None:
         def category_options_for(transaction_type_value: str) -> dict[int, str]:
             return {category.id: category.name for category in categories if category.category_type == transaction_type_value}
 
-        with page_container("/transactions"):
+        with page_container("/transactions", controller):
             page_title("Transaktionen", "Erfasse Einnahmen und Ausgaben mit passenden Kategorien und Konten.")
 
             with ui.card().classes("bp-card w-full p-6"):
@@ -111,7 +111,6 @@ def register_transactions_page(controller: FinanceController) -> None:
             with ui.card().classes("bp-card w-full p-6"):
                 with ui.row().classes("w-full items-center justify-between gap-4"):
                     ui.label("Transaktionsliste").classes("bp-section-title")
-                    group_by_month = ui.checkbox("Nach Monat gruppieren")
                 transaction_list = ui.column().classes("w-full")
 
                 def open_delete_dialog(transaction_id: int) -> None:
@@ -183,15 +182,12 @@ def register_transactions_page(controller: FinanceController) -> None:
                         result = [item for item in result if str(item.category_id) == str(filter_category.value)]
                     if filter_month.value:
                         result = [item for item in result if item.transaction_date.strftime("%Y-%m") == filter_month.value]
-                    return result
+                    return sorted(result, key=lambda item: (item.transaction_date, item.id or 0), reverse=True)
 
                 def render_transaction_list() -> None:
                     transaction_list.clear()
                     with transaction_list:
                         visible_transactions = filtered_transactions()
-                        if not group_by_month.value:
-                            transaction_table(visible_transactions, "Keine Transaktionen gefunden.", on_edit=open_edit_dialog, on_delete=open_delete_dialog)
-                            return
                         grouped: dict[str, list] = {}
                         for transaction in visible_transactions:
                             key = month_name(transaction.transaction_date.year, transaction.transaction_date.month)
@@ -212,6 +208,5 @@ def register_transactions_page(controller: FinanceController) -> None:
                 filter_type.on_value_change(render_transaction_list)
                 filter_category.on_value_change(render_transaction_list)
                 filter_month.on_value_change(render_transaction_list)
-                group_by_month.on_value_change(render_transaction_list)
                 reset_button.on_click(reset_filters)
                 render_transaction_list()

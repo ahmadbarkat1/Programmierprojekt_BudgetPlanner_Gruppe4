@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from calendar import monthrange
 from collections import defaultdict
 
 from nicegui import ui
 
-from ...utils.date_utils import current_year_month, month_name, month_short_label, previous_months
+from ...utils.date_utils import current_year_month, month_name, month_short_label, previous_month, previous_months
 from ...utils.format_utils import money
-from ..components.cards import envelope_card, stat_card
+from ..components.cards import envelope_card, progress_bar, stat_card
 from ..components.layout import empty_state, month_nav_card, page_container, page_title
 from ..components.tables import transaction_table
 from ..controllers import FinanceController
@@ -17,6 +18,102 @@ from .shared import account_balance
 
 def _chart_number_formatter() -> str:
     return "(value) => Number(value).toLocaleString('de-CH')"
+
+
+def _expense_progress_options(controller: FinanceController, year: int, month: int) -> dict:
+    comparison_months = []
+    cursor_year, cursor_month = year, month
+    for _ in range(3):
+        cursor_year, cursor_month = previous_month(cursor_year, cursor_month)
+        comparison_months.append((cursor_year, cursor_month))
+    comparison_months.reverse()
+
+    day_count = monthrange(year, month)[1]
+    days = list(range(1, day_count + 1))
+    previous_cumulative: list[list[float]] = []
+    for comparison_year, comparison_month in comparison_months:
+        month_data = controller.dashboard_data(year=comparison_year, month=comparison_month)
+        cumulative = []
+        running_total = 0.0
+        transactions_by_day: dict[int, float] = defaultdict(float)
+        for transaction in month_data.transactions:
+            if transaction.transaction_type == "expense":
+                transactions_by_day[transaction.transaction_date.day] += transaction.amount_chf
+        comparison_day_count = monthrange(comparison_year, comparison_month)[1]
+        for day in days:
+            if day <= comparison_day_count:
+                running_total += transactions_by_day.get(day, 0.0)
+            cumulative.append(round(running_total, 2))
+        previous_cumulative.append(cumulative)
+
+    average_cumulative = [
+        round(sum(month_values[day_index] for month_values in previous_cumulative) / len(previous_cumulative), 2)
+        for day_index in range(day_count)
+    ]
+
+    current_data = controller.dashboard_data(year=year, month=month)
+    current_by_day: dict[int, float] = defaultdict(float)
+    max_actual_day = 0
+    for transaction in current_data.transactions:
+        if transaction.transaction_type == "expense":
+            current_by_day[transaction.transaction_date.day] += transaction.amount_chf
+            max_actual_day = max(max_actual_day, transaction.transaction_date.day)
+    current_cumulative: list[float | None] = []
+    running_total = 0.0
+    for day in days:
+        if max_actual_day and day <= max_actual_day:
+            running_total += current_by_day.get(day, 0.0)
+            current_cumulative.append(round(running_total, 2))
+        else:
+            current_cumulative.append(None)
+
+    return {
+        "backgroundColor": "transparent",
+        "tooltip": {"trigger": "axis", ":valueFormatter": _chart_number_formatter()},
+        "legend": {"top": 2, "left": 0, "textStyle": {"fontSize": 14, "color": "#4b5563"}},
+        "grid": {"left": 64, "right": 26, "top": 82, "bottom": 56},
+        "xAxis": {
+            "type": "category",
+            "name": "Tag im Monat",
+            "nameLocation": "middle",
+            "nameGap": 34,
+            "data": [str(day) for day in days],
+            "axisLine": {"lineStyle": {"color": "#cbd5e1"}},
+            "axisTick": {"show": False},
+            "axisLabel": {"color": "#64748b", "interval": 4},
+        },
+        "yAxis": {
+            "type": "value",
+            "name": "Kumulierte Ausgaben (CHF)",
+            "nameLocation": "middle",
+            "nameGap": 48,
+            "axisLine": {"show": False},
+            "axisTick": {"show": False},
+            "axisLabel": {"color": "#64748b", ":formatter": _chart_number_formatter()},
+            "splitLine": {"lineStyle": {"color": "#e5e7eb", "type": "dashed"}},
+        },
+        "series": [
+            {
+                "name": "Üblicherweise pro Monat",
+                "type": "line",
+                "smooth": True,
+                "showSymbol": False,
+                "lineStyle": {"width": 7, "color": "#6b7280", "cap": "round"},
+                "itemStyle": {"color": "#6b7280"},
+                "data": average_cumulative,
+            },
+            {
+                "name": f"{max_actual_day or 1}. {month_name(year, month).split()[0]}",
+                "type": "line",
+                "smooth": True,
+                "connectNulls": False,
+                "symbolSize": 16,
+                "lineStyle": {"width": 5, "color": "#0284c7", "cap": "round"},
+                "itemStyle": {"color": "#0284c7", "borderColor": "#fff", "borderWidth": 3},
+                "data": current_cumulative,
+            },
+        ],
+    }
 
 
 def register_overview_page(controller: FinanceController) -> None:
@@ -54,16 +151,8 @@ def register_overview_page(controller: FinanceController) -> None:
                 }
             )
 
-        with page_container("/"):
+        with page_container("/", controller):
             page_title("Übersicht", "Dein Budgetstatus für den aktuellen Monat auf einen Blick.")
-
-            with ui.card().classes("bp-card bp-hero-stat w-full p-7"):
-                with ui.row().classes("w-full items-center justify-between gap-6"):
-                    with ui.column().classes("gap-1"):
-                        ui.label("Noch verfügbares Monatsbudget").classes("text-base text-blue-100")
-                        ui.label(money(total_budget_remaining)).classes("text-5xl font-bold bp-stat-value")
-                        ui.label(month_name(year, month)).classes("text-3xl font-bold text-blue-50")
-                    ui.icon("savings").classes("text-7xl text-blue-100")
 
             if total_budget and total_budget_remaining < 0:
                 with ui.element("div").classes("bg-red-50 border border-red-200 rounded-lg p-4 w-full"):
@@ -76,10 +165,9 @@ def register_overview_page(controller: FinanceController) -> None:
 
             with ui.element("div").classes("bp-kpi-grid"):
                 month_nav_card("/", year, month)
+                stat_card("Noch verfügbares Monatsbudget", money(total_budget_remaining), "savings", "green" if total_budget_remaining >= 0 else "red", month_name(year, month))
                 stat_card("Einnahmen", money(data.overview.total_income_chf), "trending_up", "green", month_name(year, month))
                 stat_card("Ausgaben", money(data.overview.total_expenses_chf), "trending_down", "red", month_name(year, month))
-                stat_card("Kontostand", money(total_account_balance), "account_balance_wallet", "blue", "über alle Konten")
-                stat_card("Budgetverbrauch", f"{current_usage:.0f}%", "percent", "amber" if current_usage >= 80 else "green")
 
             with ui.element("div").classes("bp-dashboard-panel w-full p-5"):
                 with ui.row().classes("w-full items-center justify-between gap-4 mb-4"):
@@ -112,7 +200,7 @@ def register_overview_page(controller: FinanceController) -> None:
                                         ui.icon(icon).classes("text-2xl bp-muted")
                                     ui.label(money(balance)).classes(f"bp-account-mini-value mt-4 {'bp-positive' if balance >= 0 else 'bp-negative'}")
 
-            with ui.element("div").classes("bp-two-col"):
+            with ui.element("div").classes("bp-dashboard-charts"):
                 with ui.card().classes("bp-card w-full p-6"):
                     ui.label("Ausgaben nach Kategorie").classes("bp-section-title mb-4")
                     category_totals: dict[str, float] = defaultdict(float)
@@ -127,31 +215,46 @@ def register_overview_page(controller: FinanceController) -> None:
                                 "series": [
                                     {
                                         "type": "pie",
-                                        "radius": ["45%", "72%"],
+                                        "radius": ["48%", "82%"],
+                                        "center": ["50%", "44%"],
                                         "label": {"show": False},
                                         "data": [{"name": name, "value": round(value, 2)} for name, value in category_totals.items()],
                                     }
                                 ],
                             }
-                        ).classes("h-80 w-full")
+                        ).classes("h-96 w-full")
                     else:
                         empty_state("pie_chart", "Noch keine Transaktionen erfasst.", "Erfasse deine erste Ausgabe.", "Ausgabe erfassen", lambda: ui.navigate.to("/transactions"))
 
                 with ui.card().classes("bp-card w-full p-6"):
-                    ui.label("Einnahmen vs. Ausgaben").classes("bp-section-title mb-4")
-                    ui.echart(
-                        {
-                            "tooltip": {"trigger": "axis", ":valueFormatter": _chart_number_formatter()},
-                            "legend": {"bottom": 0},
-                            "grid": {"left": 52, "right": 24, "top": 24, "bottom": 58},
-                            "xAxis": {"type": "category", "data": [item["month"] for item in monthly_comparison]},
-                            "yAxis": {"type": "value", "axisLabel": {":formatter": _chart_number_formatter()}},
-                            "series": [
-                                {"name": "Einnahmen", "type": "bar", "itemStyle": {"color": "#16a34a"}, "data": [item["income"] for item in monthly_comparison]},
-                                {"name": "Ausgaben", "type": "bar", "itemStyle": {"color": "#dc2626"}, "data": [item["expenses"] for item in monthly_comparison]},
-                            ],
-                        }
-                    ).classes("h-80 w-full")
+                    with ui.row().classes("w-full items-center justify-between gap-4 mb-4"):
+                        ui.label("Einnahmen vs. Ausgaben").classes("bp-section-title")
+                        chart_mode = ui.toggle({"bars": "Vergleich", "lines": "Ausgabenverlauf"}, value="bars").props("toggle-color=primary")
+                    chart_area = ui.column().classes("w-full")
+
+                    def render_income_expense_chart() -> None:
+                        chart_area.clear()
+                        with chart_area:
+                            if chart_mode.value == "lines":
+                                ui.label(f"Im {month_name(year, month).split()[0]} haben Sie bis jetzt {money(data.overview.total_expenses_chf)} ausgegeben").classes("text-2xl font-bold text-gray-900 mb-1")
+                                ui.echart(_expense_progress_options(controller, year, month)).classes("h-96 w-full")
+                                return
+                            ui.echart(
+                                {
+                                    "tooltip": {"trigger": "axis", ":valueFormatter": _chart_number_formatter()},
+                                    "legend": {"bottom": 0},
+                                    "grid": {"left": 58, "right": 26, "top": 30, "bottom": 58},
+                                    "xAxis": {"type": "category", "data": [item["month"] for item in monthly_comparison]},
+                                    "yAxis": {"type": "value", "axisLabel": {":formatter": _chart_number_formatter()}},
+                                    "series": [
+                                        {"name": "Einnahmen", "type": "bar", "itemStyle": {"color": "#16a34a"}, "data": [item["income"] for item in monthly_comparison]},
+                                        {"name": "Ausgaben", "type": "bar", "itemStyle": {"color": "#dc2626"}, "data": [item["expenses"] for item in monthly_comparison]},
+                                    ],
+                                }
+                            ).classes("h-96 w-full")
+
+                    chart_mode.on_value_change(render_income_expense_chart)
+                    render_income_expense_chart()
 
             with ui.card().classes("bp-card w-full p-6"):
                 with ui.row().classes("w-full items-center justify-between"):
@@ -161,9 +264,16 @@ def register_overview_page(controller: FinanceController) -> None:
                     empty_state("inventory_2", "Lege dein erstes Budget fest.", "Umschläge machen sichtbar, wie viel je Kategorie noch frei ist.", "Budget erfassen", lambda: ui.navigate.to("/budget"))
                 else:
                     with ui.element("div").classes("bp-grid-desktop mt-4"):
+                        with ui.element("div").classes("bp-account-total"):
+                            with ui.column().classes("gap-1"):
+                                ui.label("Alle Budgets").classes("text-sm text-teal-100")
+                                ui.label(money(total_budget_remaining)).classes("text-4xl font-bold bp-stat-value")
+                                ui.label(f"{money(budgeted_expenses)} von {money(total_budget)} verbraucht").classes("text-teal-100")
+                            progress_bar(current_usage, "danger" if total_budget_remaining < 0 else "warning" if current_usage >= 80 else "ok")
                         for status in data.budget_statuses:
                             envelope_card(status)
 
             with ui.card().classes("bp-card w-full p-6"):
                 ui.label("Letzte Transaktionen im aktuellen Monat").classes("bp-section-title mb-4")
-                transaction_table(data.transactions[:10], "Noch keine Transaktionen erfasst.")
+                sorted_transactions = sorted(data.transactions, key=lambda item: (item.transaction_date, item.id or 0), reverse=True)
+                transaction_table(sorted_transactions[:10], "Noch keine Transaktionen erfasst.")

@@ -43,8 +43,12 @@ class Database:
         """Create tables and seed demo data if the database is empty."""
         SQLModel.metadata.create_all(self._engine)
         with Session(self._engine) as session:
-            if session.exec(select(User)).first() is None:
-                BudgetSeeder().seed(session)
+            user = session.exec(select(User).order_by(User.id)).first()
+            seeder = BudgetSeeder()
+            if user is None:
+                seeder.seed(session)
+            else:
+                seeder.seed_demo_activity(session, user)
 
     @contextmanager
     def session_scope(self) -> Iterator[Session]:
@@ -58,4 +62,3 @@ class Database:
             raise
         finally:
             session.close()
-

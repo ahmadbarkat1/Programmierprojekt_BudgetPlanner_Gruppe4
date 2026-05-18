@@ -6,7 +6,7 @@ from nicegui import ui
 
 from ...utils.date_utils import current_year_month, month_name
 from ...utils.format_utils import money, parse_float, parse_int
-from ..components.cards import envelope_card, stat_card
+from ..components.cards import envelope_card, progress_bar, stat_card
 from ..components.forms import number_input
 from ..components.layout import empty_state, month_nav_card, page_container, page_title
 from ..controllers import FinanceController
@@ -27,7 +27,7 @@ def register_budget_page(controller: FinanceController) -> None:
         current_remaining = round(current_budget_limit - current_expenses, 2)
         current_usage = (current_expenses / current_budget_limit * 100) if current_budget_limit else 0
 
-        with page_container("/budget"):
+        with page_container("/budget", controller):
             page_title("Budget", "Plane dein Monatsbudget nach Kategorie und sieh sofort, wo du noch Luft hast.")
 
             with ui.element("div").classes("bp-kpi-grid"):
@@ -35,7 +35,6 @@ def register_budget_page(controller: FinanceController) -> None:
                 stat_card("Budget", money(current_budget_limit), "inventory_2", "blue", month_name(year, month))
                 stat_card("Ausgaben", money(current_expenses), "trending_down", "red", month_name(year, month))
                 stat_card("Verbleibend", money(current_remaining), "savings", "green" if current_remaining >= 0 else "red", month_name(year, month))
-                stat_card("Verbrauch", f"{current_usage:.0f}%", "percent", "amber" if current_usage >= 80 else "green", month_name(year, month))
 
             with ui.element("div").classes("bp-two-col"):
                 with ui.card().classes("bp-card w-full p-6"):
@@ -145,6 +144,12 @@ def register_budget_page(controller: FinanceController) -> None:
                     empty_state("inventory_2", "Noch keine Budgets für diesen Monat.", "Lege dein erstes Budget fest oder übernimm den Vormonat.")
                 else:
                     with ui.element("div").classes("bp-grid-desktop mt-4"):
+                        with ui.element("div").classes("bp-account-total"):
+                            with ui.column().classes("gap-1"):
+                                ui.label("Alle Budgets").classes("text-sm text-teal-100")
+                                ui.label(money(current_remaining)).classes("text-4xl font-bold bp-stat-value")
+                                ui.label(f"{money(current_expenses)} von {money(current_budget_limit)} verbraucht").classes("text-teal-100")
+                            progress_bar(current_usage, "danger" if current_remaining < 0 else "warning" if current_usage >= 80 else "ok")
                         for status in data.budget_statuses:
                             envelope_card(status, on_edit=open_edit_budget_dialog, on_delete=open_delete_budget_dialog)
 
@@ -153,7 +158,6 @@ def register_budget_page(controller: FinanceController) -> None:
                 if not budgets:
                     empty_state("inventory_2", "Kein Budget festgelegt.", "Lege dein erstes Budget fest.")
                 else:
-                    group_by_month = ui.checkbox("Nach Monat gruppieren").classes("mb-3")
                     budget_table_area = ui.column().classes("w-full")
 
                     columns = [
@@ -200,9 +204,6 @@ def register_budget_page(controller: FinanceController) -> None:
                     def render_budget_tables() -> None:
                         budget_table_area.clear()
                         with budget_table_area:
-                            if not group_by_month.value:
-                                render_table(rows)
-                                return
                             grouped: dict[str, list[dict[str, str]]] = {}
                             for row in rows:
                                 grouped.setdefault(row["period"], []).append(row)
@@ -210,7 +211,6 @@ def register_budget_page(controller: FinanceController) -> None:
                                 ui.label(period).classes("text-lg font-bold text-gray-900 mt-4")
                                 render_table(period_rows)
 
-                    group_by_month.on_value_change(render_budget_tables)
                     render_budget_tables()
 
     @ui.page("/settings")
