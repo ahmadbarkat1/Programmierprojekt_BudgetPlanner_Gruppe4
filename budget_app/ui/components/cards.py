@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from nicegui import ui
 
 from ...services.budget_service import BudgetStatus
@@ -47,7 +49,11 @@ def budget_tone(percent: float, remaining_chf: float) -> str:
     return "ok"
 
 
-def envelope_card(status: BudgetStatus) -> None:
+def envelope_card(
+    status: BudgetStatus,
+    on_edit: Callable[[int], None] | None = None,
+    on_delete: Callable[[int], None] | None = None,
+) -> None:
     budget = status.budget
     percent = (status.spent_chf / budget.limit_chf * 100) if budget.limit_chf else 0
     tone = budget_tone(percent, status.remaining_chf)
@@ -62,7 +68,12 @@ def envelope_card(status: BudgetStatus) -> None:
             with ui.column().classes("gap-1"):
                 ui.label(budget.category.name).classes("text-lg font-bold text-gray-900")
                 ui.label(f"{budget.month:02d}.{budget.year}").classes("text-xs bp-muted")
-            ui.label(f"{percent:.0f}%").classes(f"text-xl font-bold {status_class}")
+            with ui.row().classes("items-center gap-1 no-wrap"):
+                ui.label(f"{percent:.0f}%").classes(f"text-xl font-bold {status_class}")
+                if on_edit is not None:
+                    ui.button(icon="edit", on_click=lambda budget_id=budget.id: on_edit(budget_id)).props("flat dense round color=primary")
+                if on_delete is not None:
+                    ui.button(icon="delete", on_click=lambda budget_id=budget.id: on_delete(budget_id)).props("flat dense round color=negative")
         with ui.column().classes("gap-3 mt-3"):
             with ui.row().classes("w-full justify-between"):
                 ui.label("Verbraucht").classes("text-sm bp-muted")

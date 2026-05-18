@@ -27,7 +27,7 @@ class BudgetService:
         self.budget_dao = budget_dao
         self.category_dao = category_dao
 
-    def create_budget(self, month: int, year: int, limit_chf: float, user_id: int, category_id: int) -> Budget:
+    def _validate_budget(self, month: int, year: int, limit_chf: float, category_id: int) -> None:
         if month < 1 or month > 12:
             raise ValueError("Monat muss zwischen 1 und 12 liegen.")
         if year < 2000:
@@ -39,6 +39,9 @@ class BudgetService:
             raise ValueError("Die ausgewaehlte Kategorie existiert nicht.")
         if category.category_type != "expense":
             raise ValueError("Budgets koennen nur fuer Ausgabenkategorien erstellt werden.")
+
+    def create_budget(self, month: int, year: int, limit_chf: float, user_id: int, category_id: int) -> Budget:
+        self._validate_budget(month=month, year=year, limit_chf=limit_chf, category_id=category_id)
 
         existing = self.budget_dao.get_by_category_month(user_id, category_id, year, month)
         if existing is not None:
@@ -56,6 +59,27 @@ class BudgetService:
 
     def list_budgets(self, user_id: int, year: Optional[int] = None, month: Optional[int] = None) -> List[Budget]:
         return self.budget_dao.list_for_user(user_id=user_id, year=year, month=month)
+
+    def update_budget(self, budget_id: int, month: int, year: int, limit_chf: float, category_id: int) -> Budget:
+        current_budget = self.budget_dao.get_by_id(budget_id)
+        if current_budget is None:
+            raise ValueError("Das ausgewaehlte Budget existiert nicht.")
+        self._validate_budget(month=month, year=year, limit_chf=limit_chf, category_id=category_id)
+
+        existing = self.budget_dao.get_by_category_month(current_budget.user_id, category_id, year, month)
+        if existing is not None and existing.id != budget_id:
+            raise ValueError("Fuer diese Kategorie und diesen Monat gibt es bereits ein Budget.")
+
+        return self.budget_dao.update(
+            budget_id=budget_id,
+            month=month,
+            year=year,
+            limit_chf=round(float(limit_chf), 2),
+            category_id=category_id,
+        )
+
+    def delete_budget(self, budget_id: int) -> None:
+        self.budget_dao.delete(budget_id)
 
     def copy_previous_month(self, user_id: int, target_year: int, target_month: int) -> List[Budget]:
         """Copy missing budgets from the previous month into the target month."""

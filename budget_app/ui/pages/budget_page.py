@@ -87,6 +87,58 @@ def register_budget_page(controller: FinanceController) -> None:
 
                     ui.button("Budget vom Vormonat übernehmen", icon="content_copy", on_click=copy_previous_budget).classes("bp-primary-btn mt-4")
 
+            def open_edit_budget_dialog(budget_id: int) -> None:
+                budget_to_edit = next(status.budget for status in data.budget_statuses if status.budget.id == budget_id)
+                with ui.dialog() as dialog, ui.card().classes("bp-card p-6 w-full max-w-2xl"):
+                    ui.label("Budget bearbeiten").classes("bp-section-title mb-4")
+                    with ui.grid(columns="repeat(2, minmax(0, 1fr))").classes("w-full gap-4"):
+                        edit_month = number_input("Monat", "1-12", budget_to_edit.month)
+                        edit_year = number_input("Jahr", str(budget_to_edit.year), budget_to_edit.year)
+                    edit_category = ui.select(category_options, label="Ausgabenkategorie", value=budget_to_edit.category_id).classes("w-full")
+                    edit_limit = number_input("Betrag (CHF)", "0.00", f"{budget_to_edit.limit_chf:.2f}")
+
+                    def save_budget_edit() -> None:
+                        try:
+                            if edit_category.value is None:
+                                raise ValueError("Bitte eine Ausgabenkategorie auswählen.")
+                            controller.update_budget(
+                                budget_id=budget_id,
+                                month=parse_int(edit_month.value, "einen Monat"),
+                                year=parse_int(edit_year.value, "ein Jahr"),
+                                limit_chf=parse_float(edit_limit.value, "ein Budgetlimit"),
+                                category_id=int(edit_category.value),
+                            )
+                        except Exception as error:
+                            ui.notify(str(error), type="warning")
+                            return
+                        ui.notify("Budget aktualisiert.", type="positive")
+                        ui.navigate.to(f"/budget?year={year}&month={month}")
+
+                    with ui.row().classes("gap-3 mt-5"):
+                        ui.button("Speichern", icon="save", on_click=save_budget_edit).classes("bp-primary-btn")
+                        ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                dialog.open()
+
+            def open_delete_budget_dialog(budget_id: int) -> None:
+                budget_to_delete = next(status.budget for status in data.budget_statuses if status.budget.id == budget_id)
+                with ui.dialog() as dialog, ui.card().classes("bp-card p-6"):
+                    ui.label(f"Budget '{budget_to_delete.category.name}' löschen?").classes("bp-section-title")
+                    ui.label("Das Budget wird gelöscht. Bereits erfasste Transaktionen bleiben erhalten.").classes("bp-muted")
+
+                    def delete_budget() -> None:
+                        try:
+                            controller.delete_budget(budget_id)
+                        except Exception as error:
+                            ui.notify(str(error), type="warning")
+                            return
+                        ui.notify("Budget gelöscht.", type="positive")
+                        ui.navigate.to(f"/budget?year={year}&month={month}")
+
+                    with ui.row().classes("gap-3 mt-4"):
+                        ui.button("Löschen", icon="delete", on_click=delete_budget).classes("bp-danger-btn")
+                        ui.button("Abbrechen", on_click=dialog.close).classes("bp-secondary-btn")
+                dialog.open()
+
             with ui.card().classes("bp-card w-full p-6"):
                 ui.label("Budgets für diesen Monat").classes("bp-section-title")
                 if not data.budget_statuses:
@@ -94,7 +146,7 @@ def register_budget_page(controller: FinanceController) -> None:
                 else:
                     with ui.element("div").classes("bp-grid-desktop mt-4"):
                         for status in data.budget_statuses:
-                            envelope_card(status)
+                            envelope_card(status, on_edit=open_edit_budget_dialog, on_delete=open_delete_budget_dialog)
 
             budgets = controller.list_budgets()
             with ui.expansion("Erfasste Budgets", icon="table_chart", value=True).classes("bp-card w-full p-2"):

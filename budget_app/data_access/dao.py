@@ -239,6 +239,13 @@ class BudgetDAO(BaseDAO):
                 _ = budget.category
             return budgets
 
+    def get_by_id(self, budget_id: int) -> Optional[Budget]:
+        with self.session() as session:
+            budget = session.get(Budget, budget_id)
+            if budget is not None:
+                _ = budget.category
+            return budget
+
     def get_by_category_month(self, user_id: int, category_id: int, year: int, month: int) -> Optional[Budget]:
         with self.session() as session:
             statement = (
@@ -249,3 +256,26 @@ class BudgetDAO(BaseDAO):
                 .where(Budget.month == month)
             )
             return session.exec(statement).first()
+
+    def update(self, budget_id: int, month: int, year: int, limit_chf: float, category_id: int) -> Budget:
+        with self.session() as session:
+            budget = session.get(Budget, budget_id)
+            if budget is None:
+                raise ValueError("Das ausgewählte Budget existiert nicht.")
+            budget.month = month
+            budget.year = year
+            budget.limit_chf = limit_chf
+            budget.category_id = category_id
+            session.add(budget)
+            session.commit()
+            session.refresh(budget)
+            _ = budget.category
+            return budget
+
+    def delete(self, budget_id: int) -> None:
+        with self.session() as session:
+            budget = session.get(Budget, budget_id)
+            if budget is None:
+                raise ValueError("Das ausgewählte Budget existiert nicht.")
+            session.delete(budget)
+            session.commit()

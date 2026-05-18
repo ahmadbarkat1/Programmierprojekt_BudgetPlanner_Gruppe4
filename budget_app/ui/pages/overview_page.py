@@ -60,7 +60,7 @@ def register_overview_page(controller: FinanceController) -> None:
             with ui.card().classes("bp-card bp-hero-stat w-full p-7"):
                 with ui.row().classes("w-full items-center justify-between gap-6"):
                     with ui.column().classes("gap-1"):
-                        ui.label("Noch verfügbares Monatsbudget").classes("text-sm text-blue-100")
+                        ui.label("Noch verfügbares Monatsbudget").classes("text-base text-blue-100")
                         ui.label(money(total_budget_remaining)).classes("text-5xl font-bold bp-stat-value")
                         ui.label(month_name(year, month)).classes("text-3xl font-bold text-blue-50")
                     ui.icon("savings").classes("text-7xl text-blue-100")
@@ -80,6 +80,37 @@ def register_overview_page(controller: FinanceController) -> None:
                 stat_card("Ausgaben", money(data.overview.total_expenses_chf), "trending_down", "red", month_name(year, month))
                 stat_card("Kontostand", money(total_account_balance), "account_balance_wallet", "blue", "über alle Konten")
                 stat_card("Budgetverbrauch", f"{current_usage:.0f}%", "percent", "amber" if current_usage >= 80 else "green")
+
+            with ui.element("div").classes("bp-dashboard-panel w-full p-5"):
+                with ui.row().classes("w-full items-center justify-between gap-4 mb-4"):
+                    with ui.column().classes("gap-1"):
+                        ui.label("Kontenübersicht").classes("bp-section-title")
+                        ui.label("Schneller Blick darauf, wo dein Geld gerade liegt.").classes("bp-muted")
+                    ui.button("Konten verwalten", icon="account_balance_wallet", on_click=lambda: ui.navigate.to("/accounts")).classes("bp-secondary-btn")
+                if not accounts:
+                    empty_state("account_balance_wallet", "Keine Konten vorhanden.", "Erstelle dein erstes Konto, damit dein Dashboard aussagekräftig wird.", "Konto erfassen", lambda: ui.navigate.to("/accounts"))
+                else:
+                    with ui.element("div").classes("bp-account-strip"):
+                        with ui.element("div").classes("bp-account-total"):
+                            with ui.column().classes("gap-1"):
+                                ui.label("Gesamt verfügbar").classes("text-sm text-teal-100")
+                                ui.label(money(total_account_balance)).classes("text-4xl font-bold bp-stat-value")
+                            with ui.row().classes("items-center justify-between"):
+                                ui.label(f"{len(accounts)} Konten").classes("text-teal-100")
+                                ui.icon("payments").classes("text-4xl text-teal-100")
+                        with ui.element("div").classes("bp-account-list"):
+                            for account in accounts:
+                                balance = account_balance(account, all_transactions)
+                                is_cash = account.account_type == "Bargeld"
+                                icon = "payments" if is_cash else "account_balance"
+                                pill = "bp-cash-pill" if is_cash else "bp-bank-pill"
+                                with ui.element("div").classes("bp-account-mini"):
+                                    with ui.row().classes("w-full items-start justify-between gap-3 no-wrap"):
+                                        with ui.column().classes("gap-1"):
+                                            ui.label(account.name).classes("font-bold text-gray-900")
+                                            ui.label(account.account_type).classes(f"bp-pill {pill}")
+                                        ui.icon(icon).classes("text-2xl bp-muted")
+                                    ui.label(money(balance)).classes(f"bp-account-mini-value mt-4 {'bp-positive' if balance >= 0 else 'bp-negative'}")
 
             with ui.element("div").classes("bp-two-col"):
                 with ui.card().classes("bp-card w-full p-6"):

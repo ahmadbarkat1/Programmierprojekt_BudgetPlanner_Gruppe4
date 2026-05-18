@@ -193,5 +193,17 @@ class FinanceController:
             category_id=category_id,
         )
 
+    def update_budget(self, budget_id: int, month: int, year: int, limit_chf: float, category_id: int) -> Budget:
+        return self.budget_service.update_budget(
+            budget_id=budget_id,
+            month=month,
+            year=year,
+            limit_chf=limit_chf,
+            category_id=category_id,
+        )
+
+    def delete_budget(self, budget_id: int) -> None:
+        self.budget_service.delete_budget(budget_id)
+
     def copy_previous_month_budget(self, year: int, month: int) -> List[Budget]:
         return self.budget_service.copy_previous_month(self.default_user().id, target_year=year, target_month=month)

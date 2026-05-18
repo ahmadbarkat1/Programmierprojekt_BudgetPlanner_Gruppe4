@@ -113,3 +113,22 @@ def test_application_workflow_creates_recurring_budgeted_expenses():
     assert [transaction.description for transaction in transactions] == ["Abo", "Abo (2/2)"]
     assert june_dashboard.overview.total_expenses_chf == 45.0
     assert june_status.remaining_chf == 55.0
+
+
+def test_budget_can_be_updated_and_deleted_through_application_workflow():
+    app = BudgetPlannerApplication(database=Database(database_url="sqlite:///:memory:"))
+
+    category = app.finance_controller.create_category("Studium", "expense")
+    budget = app.finance_controller.create_budget(month=5, year=2026, limit_chf=200.0, category_id=category.id)
+
+    updated_budget = app.finance_controller.update_budget(
+        budget_id=budget.id,
+        month=5,
+        year=2026,
+        limit_chf=250.0,
+        category_id=category.id,
+    )
+    app.finance_controller.delete_budget(updated_budget.id)
+
+    assert updated_budget.limit_chf == 250.0
+    assert app.finance_controller.list_budgets(year=2026, month=5) == []
