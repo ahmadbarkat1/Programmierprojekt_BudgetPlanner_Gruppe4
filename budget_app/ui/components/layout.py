@@ -27,10 +27,10 @@ def navigation(active_path: str, controller: FinanceController | None = None) ->
                 ui.icon("account_balance_wallet").classes("bp-brand-icon text-teal-700")
                 ui.label("Budget Planner").classes("bp-brand-title text-gray-900")
             with ui.row().classes("items-center gap-3 no-wrap"):
-                ui.button("Darkmode", icon="dark_mode", on_click=toggle_dark_mode).classes("bp-secondary-btn bp-darkmode-label")
-                import_button = ui.button("Import", icon="upload_file", on_click=lambda: open_import_dialog(controller)).classes("bp-secondary-btn")
+                ui.button("Darkmode", icon="dark_mode", on_click=toggle_dark_mode).classes("bp-secondary-btn bp-header-action bp-darkmode-btn")
+                import_button = ui.button("Import", icon="upload_file", on_click=lambda: open_import_dialog(controller)).classes("bp-secondary-btn bp-header-action")
                 import_button.tooltip("CSV-Import ist vorbereitet: Später kannst du hier Kontoauszüge hochladen und automatisch als Transaktionen übernehmen.")
-                ui.button("Export", icon="ios_share", on_click=lambda: open_export_dialog(active_path, controller)).classes("bp-secondary-btn")
+                ui.button("Export", icon="ios_share", on_click=lambda: open_export_dialog(active_path, controller)).classes("bp-secondary-btn bp-header-action")
     with ui.row().classes("bp-nav w-full"):
         with ui.row().classes("bp-shell w-full gap-8 overflow-x-auto no-wrap"):
             for path, icon, label in nav_items:
@@ -79,9 +79,7 @@ def toggle_dark_mode() -> None:
         document.body.classList.toggle('bp-dark');
         const isDark = document.body.classList.contains('bp-dark');
         localStorage.setItem('bpDarkMode', isDark ? '1' : '0');
-        document.querySelectorAll('.bp-darkmode-label').forEach((element) => {
-            element.textContent = isDark ? 'Lightmode' : 'Darkmode';
-        });
+        window.bpUpdateDarkModeButtons?.(isDark);
         """
     )
 

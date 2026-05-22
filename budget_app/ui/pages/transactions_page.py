@@ -38,15 +38,15 @@ def register_transactions_page(controller: FinanceController) -> None:
             with ui.card().classes("bp-card w-full p-6"):
                 ui.label("Neue Transaktion erfassen").classes("bp-section-title mb-4")
                 ui.label("Typ").classes("font-semibold mb-2")
-                transaction_type = type_segmented("expense")
+                transaction_type = type_segmented()
                 with ui.grid(columns="repeat(4, minmax(180px, 1fr))").classes("w-full gap-4 mt-4"):
                     transaction_date = ui.input("Datum", value=date.today().isoformat()).props("type=date").classes("w-full")
-                    category = ui.select(category_options_for("expense"), label="Kategorie").classes("w-full")
+                    category = ui.select(category_options_for("income"), label="Kategorie").classes("w-full")
                     account = ui.select(account_options, label="Konto").classes("w-full")
                     amount = number_input("Betrag (CHF)", "0.00")
                 description = ui.input("Beschreibung", placeholder="Optional").classes("w-full mt-4")
 
-                with ui.element("div").classes("bg-gray-50 border border-gray-200 rounded-lg p-4 mt-5"):
+                with ui.element("div").classes("bp-recurring-card rounded-lg p-4 mt-5"):
                     recurring = ui.checkbox("Wiederkehrende Transaktion")
                     ui.label("Ideal für Miete, Lohn, Abos oder quartalsweise Zahlungen.").classes("text-sm bp-muted")
                     with ui.grid(columns="repeat(2, minmax(180px, 1fr))").classes("w-full gap-4 mt-3"):

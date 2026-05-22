@@ -20,8 +20,8 @@ def register_categories_page(controller: FinanceController) -> None:
 
             with ui.card().classes("bp-card w-full p-6"):
                 ui.label("Neue Kategorie erstellen").classes("bp-section-title mb-4")
-                with ui.grid(columns="340px minmax(320px, 1fr)").classes("w-full max-w-5xl gap-6 items-center"):
-                    category_type = type_segmented("expense")
+                with ui.grid(columns="max-content minmax(320px, 1fr)").classes("w-full max-w-5xl gap-6 items-center"):
+                    category_type = type_segmented()
                     category_name = ui.input("Kategoriename", placeholder="z.B. Lebensmittel, Transport").classes("w-full")
 
                 def save_category() -> None:

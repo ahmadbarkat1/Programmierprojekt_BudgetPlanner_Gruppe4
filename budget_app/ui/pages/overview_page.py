@@ -70,31 +70,40 @@ def _expense_progress_options(controller: FinanceController, year: int, month: i
     return {
         "backgroundColor": "transparent",
         "tooltip": {"trigger": "axis", ":valueFormatter": _chart_number_formatter()},
-        "legend": {"top": 2, "left": 0, "textStyle": {"fontSize": 14, "color": "#4b5563"}},
-        "grid": {"left": 64, "right": 26, "top": 82, "bottom": 56},
+        "legend": {
+            "top": 2,
+            "left": 0,
+            "itemWidth": 24,
+            "itemHeight": 14,
+            "itemGap": 18,
+            "textStyle": {"fontSize": 18, "lineHeight": 26, "color": "#4b5563"},
+        },
+        "grid": {"left": 76, "right": 26, "top": 72, "bottom": 82},
         "xAxis": {
             "type": "category",
             "name": "Tag im Monat",
             "nameLocation": "middle",
-            "nameGap": 34,
+            "nameGap": 42,
+            "nameTextStyle": {"fontSize": 18, "fontWeight": 700, "color": "#64748b"},
             "data": [str(day) for day in days],
             "axisLine": {"lineStyle": {"color": "#cbd5e1"}},
             "axisTick": {"show": False},
-            "axisLabel": {"color": "#64748b", "interval": 4},
+            "axisLabel": {"color": "#64748b", "fontSize": 16, "interval": 4},
         },
         "yAxis": {
             "type": "value",
-            "name": "Kumulierte Ausgaben (CHF)",
+            "name": "Ausgabe (CHF)",
             "nameLocation": "middle",
-            "nameGap": 48,
+            "nameGap": 58,
+            "nameTextStyle": {"fontSize": 18, "fontWeight": 700, "color": "#64748b"},
             "axisLine": {"show": False},
             "axisTick": {"show": False},
-            "axisLabel": {"color": "#64748b", ":formatter": _chart_number_formatter()},
+            "axisLabel": {"color": "#64748b", "fontSize": 16, ":formatter": _chart_number_formatter()},
             "splitLine": {"lineStyle": {"color": "#e5e7eb", "type": "dashed"}},
         },
         "series": [
             {
-                "name": "Üblicherweise pro Monat",
+                "name": "Durchschnittsausgaben letzte 3 Monate",
                 "type": "line",
                 "smooth": True,
                 "showSymbol": False,
@@ -103,7 +112,7 @@ def _expense_progress_options(controller: FinanceController, year: int, month: i
                 "data": average_cumulative,
             },
             {
-                "name": f"{max_actual_day or 1}. {month_name(year, month).split()[0]}",
+                "name": "Aktuelle Ausgaben",
                 "type": "line",
                 "smooth": True,
                 "connectNulls": False,
@@ -201,8 +210,9 @@ def register_overview_page(controller: FinanceController) -> None:
                                     ui.label(money(balance)).classes(f"bp-account-mini-value mt-4 {'bp-positive' if balance >= 0 else 'bp-negative'}")
 
             with ui.element("div").classes("bp-dashboard-charts"):
-                with ui.card().classes("bp-card w-full p-6"):
-                    ui.label("Ausgaben nach Kategorie").classes("bp-section-title mb-4")
+                with ui.card().classes("bp-card bp-chart-card w-full p-6"):
+                    with ui.row().classes("bp-chart-header w-full items-start justify-between gap-4"):
+                        ui.label("Ausgaben nach Kategorie").classes("bp-section-title")
                     category_totals: dict[str, float] = defaultdict(float)
                     for transaction in data.transactions:
                         if transaction.transaction_type == "expense":
@@ -211,47 +221,68 @@ def register_overview_page(controller: FinanceController) -> None:
                         ui.echart(
                             {
                                 "tooltip": {"trigger": "item"},
-                                "legend": {"bottom": 0},
+                                "legend": {
+                                    "orient": "vertical",
+                                    "right": 36,
+                                    "top": "middle",
+                                    "itemWidth": 28,
+                                    "itemHeight": 17,
+                                    "itemGap": 14,
+                                    "textStyle": {"fontSize": 18, "lineHeight": 26, "color": "#4b5563"},
+                                },
                                 "series": [
                                     {
                                         "type": "pie",
-                                        "radius": ["48%", "82%"],
-                                        "center": ["50%", "44%"],
+                                        "radius": ["48%", "86%"],
+                                        "center": ["37%", "48%"],
                                         "label": {"show": False},
                                         "data": [{"name": name, "value": round(value, 2)} for name, value in category_totals.items()],
                                     }
                                 ],
                             }
-                        ).classes("h-96 w-full")
+                        ).classes("bp-chart-canvas w-full")
                     else:
                         empty_state("pie_chart", "Noch keine Transaktionen erfasst.", "Erfasse deine erste Ausgabe.", "Ausgabe erfassen", lambda: ui.navigate.to("/transactions"))
 
-                with ui.card().classes("bp-card w-full p-6"):
-                    with ui.row().classes("w-full items-center justify-between gap-4 mb-4"):
-                        ui.label("Einnahmen vs. Ausgaben").classes("bp-section-title")
+                with ui.card().classes("bp-card bp-chart-card w-full p-6"):
+                    with ui.row().classes("bp-chart-header w-full items-start justify-between gap-4"):
+                        chart_title = ui.label("Einnahmen vs. Ausgaben").classes("bp-section-title")
                         chart_mode = ui.toggle({"bars": "Vergleich", "lines": "Ausgabenverlauf"}, value="bars").props("toggle-color=primary")
                     chart_area = ui.column().classes("w-full")
 
                     def render_income_expense_chart() -> None:
                         chart_area.clear()
+                        chart_title.text = "Ausgabenverlauf" if chart_mode.value == "lines" else "Einnahmen vs. Ausgaben"
                         with chart_area:
                             if chart_mode.value == "lines":
-                                ui.label(f"Im {month_name(year, month).split()[0]} haben Sie bis jetzt {money(data.overview.total_expenses_chf)} ausgegeben").classes("text-2xl font-bold text-gray-900 mb-1")
-                                ui.echart(_expense_progress_options(controller, year, month)).classes("h-96 w-full")
+                                ui.echart(_expense_progress_options(controller, year, month)).classes("bp-chart-canvas w-full")
                                 return
                             ui.echart(
                                 {
                                     "tooltip": {"trigger": "axis", ":valueFormatter": _chart_number_formatter()},
-                                    "legend": {"bottom": 0},
-                                    "grid": {"left": 58, "right": 26, "top": 30, "bottom": 58},
-                                    "xAxis": {"type": "category", "data": [item["month"] for item in monthly_comparison]},
-                                    "yAxis": {"type": "value", "axisLabel": {":formatter": _chart_number_formatter()}},
+                                    "legend": {
+                                        "bottom": 10,
+                                        "itemWidth": 24,
+                                        "itemHeight": 14,
+                                        "itemGap": 18,
+                                        "textStyle": {"fontSize": 16, "lineHeight": 22, "color": "#4b5563"},
+                                    },
+                                    "grid": {"left": 58, "right": 26, "top": 28, "bottom": 78},
+                                    "xAxis": {
+                                        "type": "category",
+                                        "data": [item["month"] for item in monthly_comparison],
+                                        "axisLabel": {"fontSize": 14, "color": "#64748b"},
+                                    },
+                                    "yAxis": {
+                                        "type": "value",
+                                        "axisLabel": {"fontSize": 14, "color": "#64748b", ":formatter": _chart_number_formatter()},
+                                    },
                                     "series": [
                                         {"name": "Einnahmen", "type": "bar", "itemStyle": {"color": "#16a34a"}, "data": [item["income"] for item in monthly_comparison]},
                                         {"name": "Ausgaben", "type": "bar", "itemStyle": {"color": "#dc2626"}, "data": [item["expenses"] for item in monthly_comparison]},
                                     ],
                                 }
-                            ).classes("h-96 w-full")
+                            ).classes("bp-chart-canvas w-full")
 
                     chart_mode.on_value_change(render_income_expense_chart)
                     render_income_expense_chart()
