@@ -123,6 +123,63 @@ def add_theme() -> None:
                 width: 170px;
                 min-width: 170px;
             }
+            .bp-help-btn {
+                width: 48px;
+                min-width: 48px;
+                height: 48px;
+                min-height: 48px;
+                padding: 0 !important;
+                border-radius: 999px !important;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .bp-help-btn .q-icon {
+                font-size: 27px;
+                line-height: 27px;
+            }
+            .bp-help-dialog {
+                max-width: 760px;
+                max-height: 86vh;
+                overflow-y: auto;
+            }
+            .bp-help-list {
+                display: grid;
+                gap: 12px;
+            }
+            .bp-help-item {
+                display: grid;
+                grid-template-columns: 42px minmax(0, 1fr);
+                gap: 12px;
+                align-items: start;
+                padding: 14px;
+                border: 1px solid #dbe3ef;
+                border-radius: 8px;
+                background: #f8fafc;
+            }
+            .bp-help-icon {
+                width: 42px;
+                height: 42px;
+                border-radius: 999px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: #dbeafe;
+                color: #1d4ed8;
+                font-size: 25px;
+            }
+            .bp-help-close {
+                color: #64748b;
+            }
+            .bp-export-options {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                gap: 10px;
+                padding: 14px;
+                border: 1px solid #dbe3ef;
+                border-radius: 8px;
+                background: #f8fafc;
+            }
             .bp-envelope-card { border-left: 5px solid #2563eb; min-height: 155px; }
             .bp-envelope-ok { border-left-color: #16a34a; }
             .bp-envelope-warning { border-left-color: #f59e0b; }
@@ -334,6 +391,7 @@ def add_theme() -> None:
                 .bp-shell, .bp-page { padding-left: 16px; padding-right: 16px; }
                 .bp-header-action { width: 48px; min-width: 48px; padding: 0 !important; }
                 .bp-darkmode-btn { width: 48px; min-width: 48px; }
+                .bp-help-btn { width: 48px; min-width: 48px; }
                 .bp-header-action .q-btn__content span:not(.q-icon) { display: none; }
                 .bp-kpi-grid, .bp-grid-desktop { grid-template-columns: 1fr; }
                 .bp-nav-link { font-size: 17px; line-height: 24px; min-height: 58px; padding: 16px 12px; }
@@ -397,6 +455,10 @@ def add_theme() -> None:
             body.bp-dark .q-field__native, body.bp-dark .q-field__input, body.bp-dark .q-field__label { color: #e5edf7; }
             body.bp-dark .q-field__marginal { color: #aebfd2; }
             body.bp-dark .q-menu, body.bp-dark .q-dialog .q-card { background: #111f32; color: #e5edf7; }
+            body.bp-dark .bp-help-item { background: #102033; border-color: #27415f; }
+            body.bp-dark .bp-help-icon { background: #1e3a8a; color: #bfdbfe; }
+            body.bp-dark .bp-help-close { color: #cbd5e1; }
+            body.bp-dark .bp-export-options { background: #102033; border-color: #27415f; }
             body.bp-dark .bp-income-pill { background: #064e3b; color: #bbf7d0; }
             body.bp-dark .bp-expense-pill { background: #7f1d1d; color: #fecaca; }
             body.bp-dark .bp-bank-pill { background: #1e3a8a; color: #bfdbfe; }

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import csv
-from io import StringIO
+import zipfile
+from io import BytesIO, StringIO
 from collections.abc import Callable
 from datetime import date
+from typing import Iterable
 
 from nicegui import ui
 
@@ -31,6 +33,8 @@ def navigation(active_path: str, controller: FinanceController | None = None) ->
                 import_button = ui.button("Import", icon="upload_file", on_click=lambda: open_import_dialog(controller)).classes("bp-secondary-btn bp-header-action")
                 import_button.tooltip("CSV-Import ist vorbereitet: Später kannst du hier Kontoauszüge hochladen und automatisch als Transaktionen übernehmen.")
                 ui.button("Export", icon="ios_share", on_click=lambda: open_export_dialog(active_path, controller)).classes("bp-secondary-btn bp-header-action")
+                help_button = ui.button(icon="help_outline", on_click=open_help_dialog).props("round").classes("bp-secondary-btn bp-help-btn")
+                help_button.tooltip("Hilfe und Anleitung öffnen")
     with ui.row().classes("bp-nav w-full"):
         with ui.row().classes("bp-shell w-full gap-8 overflow-x-auto no-wrap"):
             for path, icon, label in nav_items:
@@ -49,22 +53,57 @@ def page_container(active_path: str, controller: FinanceController | None = None
 def open_export_dialog(active_path: str, controller: FinanceController | None) -> None:
     current_year, current_month = current_year_month()
     month_options = _export_month_options(controller, current_year, current_month)
-    with ui.dialog() as dialog, ui.card().classes("bp-card p-6 w-full max-w-xl"):
+    with ui.dialog() as dialog, ui.card().classes("bp-card p-6 w-full max-w-2xl"):
         ui.label("Export").classes("bp-section-title")
-        ui.label("Wähle Exportart und Monat.").classes("bp-muted mb-3")
-        export_type = ui.select({"pdf": "PDF Export", "csv": "CSV Export"}, label="Exportart", value="pdf").classes("w-full")
+        ui.label("Wähle Datenbereiche, Format und bei Bedarf den Monat für Budgets und Transaktionen.").classes("bp-muted mb-3")
+        export_format = ui.select({"csv": "CSV", "pdf": "PDF"}, label="Exportformat", value=None).classes("w-full")
         export_month = ui.select(month_options, label="Monat", value=f"{current_year}-{current_month:02d}").classes("w-full")
 
+        with ui.element("div").classes("bp-export-options mt-4"):
+            accounts_area = ui.checkbox("Konten")
+            categories_area = ui.checkbox("Kategorien")
+            budgets_area = ui.checkbox("Budgets")
+            transactions_area = ui.checkbox("Transaktionen", value=True)
+            all_areas = ui.checkbox("Alle")
+
+        area_checkboxes = {
+            "accounts": accounts_area,
+            "categories": categories_area,
+            "budgets": budgets_area,
+            "transactions": transactions_area,
+        }
+
+        def select_all_areas() -> None:
+            if all_areas.value:
+                for checkbox in area_checkboxes.values():
+                    checkbox.value = True
+
+        def sync_all_area_state() -> None:
+            all_areas.value = all(bool(checkbox.value) for checkbox in area_checkboxes.values())
+
+        all_areas.on_value_change(select_all_areas)
+        for checkbox in area_checkboxes.values():
+            checkbox.on_value_change(sync_all_area_state)
+
         def run_export() -> None:
-            selected_year, selected_month = [int(value) for value in str(export_month.value).split("-")]
-            if export_type.value == "csv":
-                if controller is None:
-                    ui.notify("CSV-Export ist auf dieser Seite nicht verfügbar.", type="warning")
-                    return
-                _download_transactions_csv(controller, selected_year, selected_month)
-                dialog.close()
+            if controller is None:
+                ui.notify("Export ist auf dieser Seite nicht verfügbar.", type="warning")
                 return
-            _print_selected_month(active_path, selected_year, selected_month)
+            selected_areas = _selected_export_areas(
+                accounts=bool(accounts_area.value),
+                categories=bool(categories_area.value),
+                budgets=bool(budgets_area.value),
+                transactions=bool(transactions_area.value),
+                all_selected=bool(all_areas.value),
+            )
+            if not selected_areas:
+                ui.notify("Bitte wähle mindestens einen Bereich für den Export aus.", type="warning")
+                return
+            if not export_format.value:
+                ui.notify("Bitte wähle ein Exportformat aus.", type="warning")
+                return
+            selected_year, selected_month = [int(value) for value in str(export_month.value).split("-")]
+            export_selected_data(controller, selected_areas, str(export_format.value), selected_year, selected_month)
             dialog.close()
 
         with ui.row().classes("gap-3 mt-5"):
@@ -82,6 +121,67 @@ def toggle_dark_mode() -> None:
         window.bpUpdateDarkModeButtons?.(isDark);
         """
     )
+
+
+def open_help_dialog() -> None:
+    with ui.dialog() as dialog, ui.card().classes("bp-card bp-help-dialog p-6 w-full max-w-2xl"):
+        with ui.row().classes("w-full items-start justify-between gap-4 no-wrap"):
+            with ui.column().classes("gap-1"):
+                ui.label("Hilfe").classes("bp-section-title")
+                ui.label("Kurzüberblick für den Budget Planner.").classes("bp-muted")
+            ui.button(icon="close", on_click=dialog.close).props("flat round").classes("bp-help-close")
+
+        with ui.element("div").classes("bp-help-list mt-4"):
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("savings").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Envelope-System").classes("font-bold")
+                    ui.label(
+                        "Der Budget Planner arbeitet wie ein Couvert-System: Für jede Ausgabenkategorie legen Sie ein eigenes Monatsbudget fest. "
+                        "Jede Ausgabe wird einem Couvert zugeordnet, damit sofort sichtbar ist, wie viel pro Kategorie noch verfügbar ist."
+                    ).classes("bp-muted")
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("dashboard").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Übersicht").classes("font-bold")
+                    ui.label("Hier sehen Sie Budgetstatus, Kontostände, Ausgaben nach Kategorie und Monatsvergleiche.").classes("bp-muted")
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("account_balance_wallet").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Konten").classes("font-bold")
+                    ui.label("Verwalten Sie Bankkonten, Bargeld oder Sparkonten und behalten Sie Ihre aktuellen Kontostände im Blick.").classes("bp-muted")
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("sell").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Kategorien").classes("font-bold")
+                    ui.label("Erstellen Sie Kategorien für Einnahmen und Ausgaben, damit Transaktionen sauber eingeordnet werden können.").classes("bp-muted")
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("inventory_2").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Budget").classes("font-bold")
+                    ui.label(
+                        "Legen Sie pro Kategorie ein Monatsbudget fest und erkennen Sie schnell, wo noch Spielraum bleibt "
+                        "oder welches Kategorie-Budget bereits überschritten wurde."
+                    ).classes("bp-muted")
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("sync_alt").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Transaktionen").classes("font-bold")
+                    ui.label("Erfassen Sie Einnahmen oder Ausgaben und ordnen Sie diese einem Konto und einer Kategorie zu.").classes("bp-muted")
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("upload_file").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Import und Export").classes("font-bold")
+                    ui.label("Importieren Sie CSV-Daten oder exportieren Sie Monatsdaten als CSV oder Druckansicht.").classes("bp-muted")
+            with ui.element("div").classes("bp-help-item"):
+                ui.icon("support_agent").classes("bp-help-icon")
+                with ui.column().classes("gap-1"):
+                    ui.label("Kontakt").classes("font-bold")
+                    ui.label("Bei weiteren Fragen wenden Sie sich an unser Supportteam: support@budgetplanner.ch").classes("bp-muted")
+
+        with ui.row().classes("justify-end mt-5"):
+            ui.button("Verstanden", icon="check", on_click=dialog.close).classes("bp-primary-btn")
+    dialog.open()
 
 
 def open_import_dialog(controller: FinanceController | None) -> None:
@@ -195,15 +295,93 @@ def _export_month_options(controller: FinanceController | None, default_year: in
     return dict(sorted(options.items(), reverse=True))
 
 
-def _download_transactions_csv(controller: FinanceController, year: int, month: int) -> None:
-    user = controller.default_user()
-    transactions = controller.transaction_service.list_for_month(year=year, month=month, user_id=user.id)
+def _selected_export_areas(
+    *,
+    accounts: bool,
+    categories: bool,
+    budgets: bool,
+    transactions: bool,
+    all_selected: bool,
+) -> list[str]:
+    if all_selected:
+        return ["accounts", "categories", "budgets", "transactions"]
+    selected = []
+    if accounts:
+        selected.append("accounts")
+    if categories:
+        selected.append("categories")
+    if budgets:
+        selected.append("budgets")
+    if transactions:
+        selected.append("transactions")
+    return selected
+
+
+def export_selected_data(controller: FinanceController, areas: list[str], export_format: str, year: int, month: int) -> None:
+    if export_format == "csv":
+        csv_files = {}
+        if "accounts" in areas:
+            csv_files["konten_export.csv"] = export_accounts_csv(controller)
+        if "categories" in areas:
+            csv_files["kategorien_export.csv"] = export_categories_csv(controller)
+        if "budgets" in areas:
+            csv_files["budgets_export.csv"] = export_budgets_csv(controller, year, month)
+        if "transactions" in areas:
+            csv_files["transaktionen_export.csv"] = export_transactions_csv(controller, year, month)
+        if len(csv_files) == 1:
+            filename, content = next(iter(csv_files.items()))
+            ui.download(content, filename=filename, media_type="text/csv")
+        else:
+            ui.download(create_export_zip(csv_files), filename=f"budgetplanner_export_{year}_{month:02d}.zip", media_type="application/zip")
+        ui.notify("Export erstellt.", type="positive")
+        return
+    if export_format == "pdf":
+        ui.download(
+            export_selected_data_pdf(controller, areas, year, month),
+            filename=f"budgetplanner_export_{year}_{month:02d}.pdf",
+            media_type="application/pdf",
+        )
+        ui.notify("PDF-Bericht erstellt.", type="positive")
+        return
+    ui.notify("Bitte wähle ein Exportformat aus.", type="warning")
+
+
+def _csv_download_bytes(rows: Iterable[Iterable[object]]) -> bytes:
     output = StringIO()
     writer = csv.writer(output, delimiter=";")
-    writer.writerow(["Datum", "Typ", "Kategorie", "Konto", "Beschreibung", "Betrag CHF"])
+    for row in rows:
+        writer.writerow(row)
+    return output.getvalue().encode("utf-8-sig")
+
+
+def export_accounts_csv(controller: FinanceController) -> bytes:
+    rows = [["Kontoname", "Kontotyp", "Startsaldo CHF"]]
+    for account in controller.list_accounts():
+        rows.append([account.name, account.account_type, f"{account.starting_balance_chf:.2f}"])
+    return _csv_download_bytes(rows)
+
+
+def export_categories_csv(controller: FinanceController) -> bytes:
+    rows = [["Kategoriename", "Typ"]]
+    for category in controller.list_categories():
+        rows.append([category.name, "Einnahme" if category.category_type == "income" else "Ausgabe"])
+    return _csv_download_bytes(rows)
+
+
+def export_budgets_csv(controller: FinanceController, year: int, month: int) -> bytes:
+    rows = [["Monat", "Jahr", "Kategorie", "Limit CHF"]]
+    for budget in controller.list_budgets(year=year, month=month):
+        rows.append([budget.month, budget.year, budget.category.name, f"{budget.limit_chf:.2f}"])
+    return _csv_download_bytes(rows)
+
+
+def export_transactions_csv(controller: FinanceController, year: int, month: int) -> bytes:
+    user = controller.default_user()
+    transactions = controller.transaction_service.list_for_month(year=year, month=month, user_id=user.id)
+    rows = [["Datum", "Typ", "Kategorie", "Konto", "Beschreibung", "Betrag CHF"]]
     for transaction in transactions:
         signed_amount = transaction.amount_chf if transaction.transaction_type == "income" else -transaction.amount_chf
-        writer.writerow(
+        rows.append(
             [
                 transaction.transaction_date.isoformat(),
                 "Einnahme" if transaction.transaction_type == "income" else "Ausgabe",
@@ -213,9 +391,158 @@ def _download_transactions_csv(controller: FinanceController, year: int, month: 
                 f"{signed_amount:.2f}",
             ]
         )
-    csv_bytes = output.getvalue().encode("utf-8-sig")
+    return _csv_download_bytes(rows)
+
+
+def create_export_zip(csv_files: dict[str, bytes]) -> bytes:
+    archive = BytesIO()
+    with zipfile.ZipFile(archive, mode="w", compression=zipfile.ZIP_DEFLATED) as zip_file:
+        for filename, content in csv_files.items():
+            zip_file.writestr(filename, content)
+    return archive.getvalue()
+
+
+def export_selected_data_pdf(controller: FinanceController, areas: list[str], year: int, month: int) -> bytes:
+    lines: list[tuple[str, int, bool]] = [
+        ("Budget Planner Exportbericht", 16, True),
+        (f"Monat: {month_name(year, month)}", 11, False),
+        ("", 10, False),
+    ]
+    if "accounts" in areas:
+        account_rows = [["Kontoname", "Kontotyp", "Startsaldo CHF"]]
+        account_rows.extend([[account.name, account.account_type, f"{account.starting_balance_chf:.2f}"] for account in controller.list_accounts()])
+        _append_pdf_section(lines, "Konten", account_rows)
+    if "categories" in areas:
+        category_rows = [["Kategoriename", "Typ"]]
+        category_rows.extend([[category.name, "Einnahme" if category.category_type == "income" else "Ausgabe"] for category in controller.list_categories()])
+        _append_pdf_section(lines, "Kategorien", category_rows)
+    if "budgets" in areas:
+        budget_rows = [["Monat", "Jahr", "Kategorie", "Limit CHF"]]
+        budget_rows.extend([[budget.month, budget.year, budget.category.name, f"{budget.limit_chf:.2f}"] for budget in controller.list_budgets(year=year, month=month)])
+        _append_pdf_section(lines, "Budgets", budget_rows)
+    if "transactions" in areas:
+        user = controller.default_user()
+        transactions = controller.transaction_service.list_for_month(year=year, month=month, user_id=user.id)
+        transaction_rows = [["Datum", "Typ", "Kategorie", "Konto", "Beschreibung", "Betrag CHF"]]
+        for transaction in transactions:
+            signed_amount = transaction.amount_chf if transaction.transaction_type == "income" else -transaction.amount_chf
+            transaction_rows.append(
+                [
+                    transaction.transaction_date.isoformat(),
+                    "Einnahme" if transaction.transaction_type == "income" else "Ausgabe",
+                    transaction.category.name,
+                    transaction.account.name,
+                    transaction.description,
+                    f"{signed_amount:.2f}",
+                ]
+            )
+        _append_pdf_section(lines, "Transaktionen", transaction_rows)
+    return _build_simple_pdf(lines)
+
+
+def _append_pdf_section(lines: list[tuple[str, int, bool]], title: str, rows: list[list[object]]) -> None:
+    lines.append((title, 14, True))
+    if len(rows) == 1:
+        lines.append(("Keine Daten vorhanden.", 10, False))
+        lines.append(("", 10, False))
+        return
+    for index, row in enumerate(rows):
+        lines.append((" | ".join(str(value) for value in row), 10, index == 0))
+    lines.append(("", 10, False))
+
+
+def _build_simple_pdf(lines: list[tuple[str, int, bool]]) -> bytes:
+    page_width = 842
+    page_height = 595
+    margin_x = 38
+    y_start = 552
+    y_min = 42
+    objects: list[bytes | None] = [None]
+    objects.extend([b"", b"", b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>", b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>"])
+    page_ids: list[int] = []
+    content_id = 0
+    page_commands: list[str] = []
+    y = y_start
+
+    def flush_page() -> None:
+        nonlocal page_commands
+        if not page_commands:
+            return
+        stream = "\n".join(page_commands).encode("latin-1", "replace")
+        objects.append(b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream")
+        current_content_id = len(objects) - 1
+        page = (
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {page_width} {page_height}] "
+            f"/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {current_content_id} 0 R >>"
+        ).encode("ascii")
+        objects.append(page)
+        page_ids.append(len(objects) - 1)
+        page_commands = []
+
+    for raw_text, font_size, is_bold in lines:
+        for text in _wrap_pdf_line(str(raw_text), max_chars=132):
+            line_height = max(font_size + 5, 14)
+            if y - line_height < y_min:
+                flush_page()
+                y = y_start
+            font = "F2" if is_bold else "F1"
+            page_commands.append(f"BT /{font} {font_size} Tf {margin_x} {y} Td ({_pdf_escape(text)}) Tj ET")
+            y -= line_height
+    flush_page()
+    if not page_ids:
+        page_ids.append(5)
+    kids = " ".join(f"{page_id} 0 R" for page_id in page_ids)
+    objects[1] = b"<< /Type /Catalog /Pages 2 0 R >>"
+    objects[2] = f"<< /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >>".encode("ascii")
+    return _serialize_pdf(objects)
+
+
+def _wrap_pdf_line(text: str, max_chars: int) -> list[str]:
+    if not text:
+        return [""]
+    parts = []
+    current = ""
+    for word in text.split():
+        if len(current) + len(word) + 1 <= max_chars:
+            current = f"{current} {word}".strip()
+        else:
+            parts.append(current)
+            current = word
+    if current:
+        parts.append(current)
+    return parts or [""]
+
+
+def _pdf_escape(text: str) -> str:
+    cleaned = text.replace("’", "'").replace("–", "-")
+    cleaned = cleaned.encode("latin-1", "replace").decode("latin-1")
+    return cleaned.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def _serialize_pdf(objects: list[bytes | None]) -> bytes:
+    pdf = BytesIO()
+    pdf.write(b"%PDF-1.4\n")
+    offsets = [0]
+    for object_id, content in enumerate(objects[1:], start=1):
+        offsets.append(pdf.tell())
+        pdf.write(f"{object_id} 0 obj\n".encode("ascii"))
+        pdf.write(content or b"")
+        pdf.write(b"\nendobj\n")
+    xref_offset = pdf.tell()
+    pdf.write(f"xref\n0 {len(objects)}\n".encode("ascii"))
+    pdf.write(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        pdf.write(f"{offset:010d} 00000 n \n".encode("ascii"))
+    pdf.write(
+        f"trailer\n<< /Size {len(objects)} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF\n".encode("ascii")
+    )
+    return pdf.getvalue()
+
+
+def _download_transactions_csv(controller: FinanceController, year: int, month: int) -> None:
+    csv_bytes = export_transactions_csv(controller, year, month)
     ui.download(csv_bytes, filename=f"budgetplanner_{year}_{month:02d}_transaktionen.csv", media_type="text/csv")
-    ui.notify(f"CSV für {month_name(year, month)} exportiert: {len(transactions)} Transaktionen.", type="positive")
+    ui.notify(f"CSV für {month_name(year, month)} exportiert.", type="positive")
 
 
 def _print_selected_month(active_path: str, year: int, month: int) -> None:
@@ -246,7 +573,6 @@ def month_nav_card(path: str, year: int, month: int) -> None:
         with ui.row().classes("w-full h-full items-center justify-between gap-3 no-wrap"):
             ui.button(icon="chevron_left", on_click=lambda: ui.navigate.to(previous_target)).props("flat round").classes("bp-month-arrow")
             with ui.column().classes("items-center gap-1"):
-                ui.label("Monat").classes("text-sm bp-muted")
                 ui.label(month_name(year, month)).classes("bp-month-value text-gray-900")
             ui.button(icon="chevron_right", on_click=lambda: ui.navigate.to(next_target)).props("flat round").classes("bp-month-arrow")
 
