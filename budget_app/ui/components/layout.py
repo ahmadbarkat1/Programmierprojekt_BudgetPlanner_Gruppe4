@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import csv
 import zipfile
-from calendar import monthrange
-from collections import defaultdict
 from io import BytesIO, StringIO
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -14,7 +12,8 @@ from typing import Iterable
 
 from nicegui import ui
 
-from ...utils.date_utils import current_year_month, month_name, month_short_label, next_month, previous_month, previous_months
+from ...services.pdf_export_service import export_budgetplanner_pdf
+from ...utils.date_utils import current_year_month, month_name, next_month, previous_month
 from ..controllers import FinanceController
 
 
@@ -81,13 +80,21 @@ def open_export_dialog(active_path: str, controller: FinanceController | None) -
         def select_all_areas() -> None:
             if syncing_all_area["active"]:
                 return
-            for checkbox in area_checkboxes.values():
-                checkbox.value = bool(all_areas.value)
+            syncing_all_area["active"] = True
+            try:
+                for checkbox in area_checkboxes.values():
+                    checkbox.value = bool(all_areas.value)
+            finally:
+                syncing_all_area["active"] = False
 
         def sync_all_area_state() -> None:
+            if syncing_all_area["active"]:
+                return
             syncing_all_area["active"] = True
-            all_areas.value = all(bool(checkbox.value) for checkbox in area_checkboxes.values())
-            syncing_all_area["active"] = False
+            try:
+                all_areas.value = all(bool(checkbox.value) for checkbox in area_checkboxes.values())
+            finally:
+                syncing_all_area["active"] = False
 
         all_areas.on_value_change(select_all_areas)
         for checkbox in area_checkboxes.values():
@@ -705,50 +712,7 @@ def create_export_zip(csv_files: dict[str, bytes]) -> bytes:
 
 
 def export_selected_data_pdf(controller: FinanceController, areas: list[str], year: int, month: int) -> bytes:
-    page_streams: list[bytes] = []
-    if "overview" in areas:
-        page_streams.append(_build_overview_pdf_page(controller, year, month))
-
-    report_areas = [area for area in areas if area != "overview"]
-    if not report_areas:
-        return _build_pdf_pages(page_streams)
-
-    lines: list[tuple[str, int, bool]] = [
-        ("Budget Planner Exportbericht", 16, True),
-        (f"Monat: {month_name(year, month)}", 11, False),
-        ("", 10, False),
-    ]
-    if "accounts" in areas:
-        account_rows = [["Kontoname", "Kontotyp", "Startsaldo CHF"]]
-        account_rows.extend([[account.name, account.account_type, f"{account.starting_balance_chf:.2f}"] for account in controller.list_accounts()])
-        _append_pdf_section(lines, "Konten", account_rows)
-    if "categories" in areas:
-        category_rows = [["Kategoriename", "Typ"]]
-        category_rows.extend([[category.name, "Einnahme" if category.category_type == "income" else "Ausgabe"] for category in controller.list_categories()])
-        _append_pdf_section(lines, "Kategorien", category_rows)
-    if "budgets" in areas:
-        budget_rows = [["Monat", "Jahr", "Kategorie", "Limit CHF"]]
-        budget_rows.extend([[budget.month, budget.year, budget.category.name, f"{budget.limit_chf:.2f}"] for budget in controller.list_budgets(year=year, month=month)])
-        _append_pdf_section(lines, "Budgets", budget_rows)
-    if "transactions" in areas:
-        user = controller.default_user()
-        transactions = controller.transaction_service.list_for_month(year=year, month=month, user_id=user.id)
-        transaction_rows = [["Datum", "Typ", "Kategorie", "Konto", "Beschreibung", "Betrag CHF"]]
-        for transaction in transactions:
-            signed_amount = transaction.amount_chf if transaction.transaction_type == "income" else -transaction.amount_chf
-            transaction_rows.append(
-                [
-                    transaction.transaction_date.isoformat(),
-                    "Einnahme" if transaction.transaction_type == "income" else "Ausgabe",
-                    transaction.category.name,
-                    transaction.account.name,
-                    transaction.description,
-                    f"{signed_amount:.2f}",
-                ]
-            )
-        _append_pdf_section(lines, "Transaktionen", transaction_rows)
-    page_streams.extend(_build_simple_pdf_streams(lines))
-    return _build_pdf_pages(page_streams)
+    return export_budgetplanner_pdf(controller, areas, year, month)
 
 
 def _build_overview_pdf_page(controller: FinanceController, year: int, month: int) -> bytes:

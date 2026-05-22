@@ -299,8 +299,17 @@ def register_overview_page(controller: FinanceController) -> None:
                             with ui.column().classes("gap-1"):
                                 ui.label("Alle Budgets").classes("text-sm text-teal-100")
                                 ui.label(money(total_budget_remaining)).classes("text-4xl font-bold bp-stat-value")
-                                ui.label(f"{money(budgeted_expenses)} von {money(total_budget)} verbraucht").classes("text-teal-100")
                             progress_bar(current_usage, "danger" if total_budget_remaining < 0 else "warning" if current_usage >= 80 else "ok")
+                            with ui.element("div").classes("bp-compact-metrics bp-summary-metrics"):
+                                with ui.column().classes("bp-metric-box gap-0"):
+                                    ui.label("Budget").classes("text-xs bp-muted")
+                                    ui.label(money(total_budget)).classes("font-semibold bp-money text-gray-900")
+                                with ui.column().classes("bp-metric-box gap-0"):
+                                    ui.label("Verbrauch").classes("text-xs bp-muted")
+                                    ui.label(money(budgeted_expenses)).classes("font-semibold bp-money text-gray-900")
+                                with ui.column().classes("bp-metric-box gap-0"):
+                                    ui.label("Rest").classes("text-xs bp-muted")
+                                    ui.label(money(total_budget_remaining)).classes(f"font-semibold bp-money {'bp-positive' if total_budget_remaining >= 0 else 'bp-negative'}")
                         for status in data.budget_statuses:
                             envelope_card(status)
 

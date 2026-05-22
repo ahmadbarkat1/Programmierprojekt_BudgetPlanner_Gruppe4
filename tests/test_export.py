@@ -15,6 +15,10 @@ from budget_app.ui.components.layout import (
 )
 
 
+def _pdf_page_count(pdf: bytes) -> int:
+    return pdf.count(b"/Type /Page ")
+
+
 def test_export_csv_templates_include_headers():
     app = BudgetPlannerApplication(database=Database(database_url="sqlite:///:memory:"))
     controller = app.finance_controller
@@ -45,6 +49,19 @@ def test_pdf_export_returns_pdf_bytes_for_all_areas():
     pdf = export_selected_data_pdf(app.finance_controller, ["overview", "accounts", "categories", "budgets", "transactions"], 2026, 5)
 
     assert pdf.startswith(b"%PDF-")
+    assert _pdf_page_count(pdf) == 5
+
+
+def test_pdf_export_uses_one_page_per_selected_area():
+    app = BudgetPlannerApplication(database=Database(database_url="sqlite:///:memory:"))
+
+    overview_pdf = export_selected_data_pdf(app.finance_controller, ["overview"], 2026, 5)
+    categories_pdf = export_selected_data_pdf(app.finance_controller, ["categories"], 2026, 5)
+    mixed_pdf = export_selected_data_pdf(app.finance_controller, ["overview", "categories"], 2026, 5)
+
+    assert _pdf_page_count(overview_pdf) == 1
+    assert _pdf_page_count(categories_pdf) == 1
+    assert _pdf_page_count(mixed_pdf) == 2
 
 
 def test_selected_export_areas_validates_empty_and_all_selection():

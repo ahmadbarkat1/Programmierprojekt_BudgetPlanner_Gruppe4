@@ -56,7 +56,7 @@ def add_theme() -> None:
             .bp-account-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; width: 100%; }
             .bp-account-mini { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; min-width: 0; }
             .bp-account-mini-value { font-size: 22px; line-height: 28px; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-            .bp-grid-desktop { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; width: 100%; }
+            .bp-grid-desktop { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 18px; width: 100%; }
             .bp-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; width: 100%; align-items: stretch; }
             .bp-two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; width: 100%; align-items: start; }
             .bp-dashboard-charts { display: grid; grid-template-columns: minmax(300px, .75fr) minmax(520px, 1.25fr); gap: 20px; width: 100%; align-items: start; }
@@ -361,9 +361,10 @@ def add_theme() -> None:
             .bp-month-value { font-size: 34px; line-height: 40px; font-weight: 850; text-align: center; color: #fff !important; }
             .bp-month-arrow { opacity: .96; background: rgba(255,255,255,.95); color: #2f7fc2; transition: opacity 140ms ease, transform 140ms ease; box-shadow: 0 10px 20px -16px rgb(15 23 42 / .6); }
             .bp-month-card:hover .bp-month-arrow { opacity: 1; transform: scale(1.08); }
-            .bp-compact-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-            .bp-metric-box { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; min-width: 0; }
-            .bp-metric-box .bp-money { font-size: 16px; text-align: left; overflow-wrap: anywhere; white-space: normal; }
+            .bp-compact-metrics { display: grid; grid-template-columns: repeat(3, minmax(92px, 1fr)); gap: 10px; }
+            .bp-summary-metrics { grid-template-columns: repeat(3, minmax(98px, 1fr)); }
+            .bp-metric-box { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 9px; min-width: 0; overflow: hidden; }
+            .bp-metric-box .bp-money { font-size: clamp(12px, 1.05vw, 14px); line-height: 18px; text-align: left; overflow-wrap: normal; white-space: nowrap; letter-spacing: 0; }
             @media print {
                 .bp-header, .bp-nav, .q-btn { display: none !important; }
                 @page { size: A4 landscape; margin: 8mm; }

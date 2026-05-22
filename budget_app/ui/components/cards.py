@@ -75,9 +75,6 @@ def envelope_card(
                 if on_delete is not None:
                     ui.button(icon="delete", on_click=lambda budget_id=budget.id: on_delete(budget_id)).props("flat dense round color=negative")
         with ui.column().classes("gap-3 mt-3"):
-            with ui.row().classes("w-full justify-between"):
-                ui.label("Verbraucht").classes("text-sm bp-muted")
-                ui.label(f"{money(status.spent_chf)} von {money(budget.limit_chf)}").classes("text-sm bp-muted")
             progress_bar(percent, tone)
             with ui.element("div").classes("bp-compact-metrics"):
                 with ui.column().classes("bp-metric-box gap-0"):
