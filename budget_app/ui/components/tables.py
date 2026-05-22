@@ -36,9 +36,17 @@ def transaction_table(
     empty_text: str,
     on_edit: Callable[[int], None] | None = None,
     on_delete: Callable[[int], None] | None = None,
+    empty_cta: str | None = None,
+    empty_cta_action: Callable[[], None] | None = None,
 ) -> None:
     if not transactions:
-        empty_state("receipt_long", empty_text, "Erfasse deine erste Einnahme oder Ausgabe, damit die Übersicht lebendig wird.")
+        empty_state(
+            "receipt_long",
+            empty_text,
+            "Erfasse deine erste Einnahme oder Ausgabe, damit die Übersicht lebendig wird.",
+            empty_cta,
+            empty_cta_action,
+        )
         return
     columns: list[dict[str, str]] = [
         {"name": "date", "label": "Datum", "field": "date", "align": "left"},

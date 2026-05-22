@@ -307,4 +307,9 @@ def register_overview_page(controller: FinanceController) -> None:
             with ui.card().classes("bp-card w-full p-6"):
                 ui.label("Letzte Transaktionen im aktuellen Monat").classes("bp-section-title mb-4")
                 sorted_transactions = sorted(data.transactions, key=lambda item: (item.transaction_date, item.id or 0), reverse=True)
-                transaction_table(sorted_transactions[:10], "Noch keine Transaktionen erfasst.")
+                transaction_table(
+                    sorted_transactions[:10],
+                    "Noch keine Transaktionen erfasst.",
+                    empty_cta="Transaktion erfassen",
+                    empty_cta_action=lambda: ui.navigate.to("/transactions"),
+                )
