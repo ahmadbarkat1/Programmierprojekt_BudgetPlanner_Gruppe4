@@ -38,10 +38,11 @@ def transaction_table(
     on_delete: Callable[[int], None] | None = None,
     empty_cta: str | None = None,
     empty_cta_action: Callable[[], None] | None = None,
+    empty_icon: str = "receipt_long",
 ) -> None:
     if not transactions:
         empty_state(
-            "receipt_long",
+            empty_icon,
             empty_text,
             "Erfasse deine erste Einnahme oder Ausgabe, damit die Übersicht lebendig wird.",
             empty_cta,

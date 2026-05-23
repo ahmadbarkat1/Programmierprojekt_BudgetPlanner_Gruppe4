@@ -242,7 +242,7 @@ def register_overview_page(controller: FinanceController) -> None:
                             }
                         ).classes("bp-chart-canvas w-full")
                     else:
-                        empty_state("pie_chart", "Noch keine Transaktionen erfasst.", "Erfasse deine erste Ausgabe.", "Ausgabe erfassen", lambda: ui.navigate.to("/transactions"))
+                        empty_state("sell", "Noch keine Kategorie erfasst.", "Erfasse deine erste Ausgabe.", "Ausgabe erfassen", lambda: ui.navigate.to("/transactions"))
 
                 with ui.card().classes("bp-card bp-chart-card w-full p-6"):
                     with ui.row().classes("bp-chart-header w-full items-start justify-between gap-4"):
@@ -321,4 +321,5 @@ def register_overview_page(controller: FinanceController) -> None:
                     "Noch keine Transaktionen erfasst.",
                     empty_cta="Transaktion erfassen",
                     empty_cta_action=lambda: ui.navigate.to("/transactions"),
+                    empty_icon="sync_alt",
                 )
