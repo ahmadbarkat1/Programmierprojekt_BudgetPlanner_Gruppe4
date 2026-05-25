@@ -10,46 +10,46 @@ Wichtige Grundregel im aktuellen Projektstand: Ausgaben können über den vollst
 
 | Testfall-ID | Bereich | Titel/Beschreibung | Abdeckung |
 | --- | --- | --- | --- |
-| TC_001 | Transaktionen | Überprüfen, dass eine Einnahme erstellt werden kann | Automatisiert / Service-Workflow |
-| TC_002 | Transaktionen | Überprüfen, dass eine Ausgabe mit vorhandenem Budget erstellt werden kann | Automatisiert / Integrationstest |
-| TC_003 | Kategorien | Überprüfen, dass eine Kategorie erstellt werden kann | Service-/UI-Workflow |
-| TC_004 | Budgets | Überprüfen, dass ein Monatsbudget erstellt werden kann | Automatisiert / Integrationstest |
-| TC_005 | Budgets | Überprüfen, dass das Restbudget korrekt berechnet wird | Automatisiert / Unit Test |
-| TC_006 | Konten | Überprüfen, dass die Kontenübersicht angezeigt wird | Manuell / Service-Workflow |
-| TC_007 | Datenbank | Überprüfen, dass Daten in SQLite gespeichert bleiben | Automatisiert / Datenbanktest |
-| TC_008 | Budgets | Überprüfen, dass eine Budgetüberschreitung angezeigt wird | Automatisiert / Unit Test |
-| TC_009 | Übersicht | Überprüfen, dass die Gesamtausgaben korrekt berechnet werden | Automatisiert / Unit Test |
-| TC_010 | Übersicht | Überprüfen, dass die Gesamteinnahmen korrekt berechnet werden | Automatisiert / Unit Test |
-| TC_011 | Konten | Überprüfen, dass der Kontostand korrekt berechnet wird | Automatisiert / Unit Test |
-| TC_012 | Konten | Überprüfen, dass mehrere Konten verwaltet werden können | Manuell / Service-Workflow |
-| TC_013 | Kategorien | Überprüfen, dass eine Kategorie bearbeitet werden kann | Manuell / Service-Workflow |
-| TC_014 | Kategorien | Überprüfen, dass eine verwendete Kategorie nicht gelöscht werden kann | Service-Regel |
-| TC_015 | Transaktionen | Überprüfen, dass Transaktionen nach Kategorie gefiltert werden können | Manueller UI-Test |
-| TC_016 | Transaktionen | Überprüfen, dass Transaktionen nach Monat gefiltert werden können | Automatisiert / Datenbanktest |
-| TC_017 | Transaktionen | Überprüfen, dass eine Einnahme gelöscht werden kann | Manuell / DAO-Workflow |
-| TC_018 | Transaktionen | Überprüfen, dass eine Ausgabe gelöscht werden kann | Manuell / DAO-Workflow |
-| TC_019 | Transaktionen | Überprüfen, dass eine Transaktion bearbeitet werden kann | Manuell / DAO-Workflow |
-| TC_020 | Konten | Überprüfen, dass ein Konto bearbeitet werden kann | Manuell / Service-Workflow |
-| TC_021 | Konten | Überprüfen, dass ein verwendetes Konto nicht gelöscht werden kann | Service-Regel |
-| TC_022 | Budgets | Überprüfen, dass ein Budget bearbeitet werden kann | Automatisiert / Integrationstest |
-| TC_023 | Budgets | Überprüfen, dass ein Budget gelöscht werden kann | Automatisiert / Integrationstest |
-| TC_024 | Budgets | Überprüfen, dass Budgets aus dem Vormonat übernommen werden können | Service-/UI-Workflow |
-| TC_025 | Transaktionen | Überprüfen, dass wiederkehrende Transaktionen erstellt werden können | Automatisiert / Integrationstest |
-| TC_026 | Validierung | Überprüfen, dass ein ungültiger Betrag abgelehnt wird | Automatisiert / Validierungstest |
-| TC_027 | Validierung | Überprüfen, dass ein ungültiger Transaktionstyp abgelehnt wird | Automatisiert / Validierungstest |
-| TC_028 | Validierung | Überprüfen, dass Kategorie und Transaktionstyp zusammenpassen müssen | Service-Regel |
-| TC_029 | Import | Überprüfen, dass ein Konto aus CSV importiert werden kann | Automatisiert / Importtest |
-| TC_030 | Import | Überprüfen, dass eine Kategorie aus CSV importiert werden kann | Automatisiert / Importtest |
-| TC_031 | Import | Überprüfen, dass ein Budget aus CSV importiert oder aktualisiert werden kann | Automatisiert / Importtest |
-| TC_032 | Import | Überprüfen, dass Transaktionen aus CSV importiert werden können | Automatisiert / Importtest |
-| TC_033 | Import | Überprüfen, dass fehlerhafte CSV-Zeilen gemeldet werden | Automatisiert / Importtest |
-| TC_034 | Export | Überprüfen, dass CSV-Exportdateien erstellt werden | Automatisiert / Exporttest |
-| TC_035 | Export | Überprüfen, dass mehrere CSV-Bereiche als ZIP exportiert werden | Automatisiert / Exporttest |
-| TC_036 | Export | Überprüfen, dass ein PDF-Bericht erstellt wird | Automatisiert / Exporttest |
-| TC_037 | Export | Überprüfen, dass der PDF-Export viele Konten paginiert | Automatisiert / Exporttest |
-| TC_038 | UI | Überprüfen, dass der Darkmode umgeschaltet werden kann | Manueller UI-Test |
-| TC_039 | UI | Überprüfen, dass der Hilfe-Dialog geöffnet werden kann | Manueller UI-Test |
-| TC_040 | Navigation | Überprüfen, dass `/settings` zu `/accounts` weiterleitet | Manueller UI-Test |
+| [TC_001](#tc_001) | Transaktionen | Überprüfen, dass eine Einnahme erstellt werden kann | Automatisiert / Service-Workflow |
+| [TC_002](#tc_002) | Transaktionen | Überprüfen, dass eine Ausgabe mit vorhandenem Budget erstellt werden kann | Automatisiert / Integrationstest |
+| [TC_003](#tc_003) | Kategorien | Überprüfen, dass eine Kategorie erstellt werden kann | Service-/UI-Workflow |
+| [TC_004](#tc_004) | Budgets | Überprüfen, dass ein Monatsbudget erstellt werden kann | Automatisiert / Integrationstest |
+| [TC_005](#tc_005) | Budgets | Überprüfen, dass das Restbudget korrekt berechnet wird | Automatisiert / Unit Test |
+| [TC_006](#tc_006) | Konten | Überprüfen, dass die Kontenübersicht angezeigt wird | Manuell / Service-Workflow |
+| [TC_007](#tc_007) | Datenbank | Überprüfen, dass Daten in SQLite gespeichert bleiben | Automatisiert / Datenbanktest |
+| [TC_008](#tc_008) | Budgets | Überprüfen, dass eine Budgetüberschreitung angezeigt wird | Automatisiert / Unit Test |
+| [TC_009](#tc_009) | Übersicht | Überprüfen, dass die Gesamtausgaben korrekt berechnet werden | Automatisiert / Unit Test |
+| [TC_010](#tc_010) | Übersicht | Überprüfen, dass die Gesamteinnahmen korrekt berechnet werden | Automatisiert / Unit Test |
+| [TC_011](#tc_011) | Konten | Überprüfen, dass der Kontostand korrekt berechnet wird | Automatisiert / Unit Test |
+| [TC_012](#tc_012) | Konten | Überprüfen, dass mehrere Konten verwaltet werden können | Manuell / Service-Workflow |
+| [TC_013](#tc_013) | Kategorien | Überprüfen, dass eine Kategorie bearbeitet werden kann | Manuell / Service-Workflow |
+| [TC_014](#tc_014) | Kategorien | Überprüfen, dass eine verwendete Kategorie nicht gelöscht werden kann | Service-Regel |
+| [TC_015](#tc_015) | Transaktionen | Überprüfen, dass Transaktionen nach Kategorie gefiltert werden können | Manueller UI-Test |
+| [TC_016](#tc_016) | Transaktionen | Überprüfen, dass Transaktionen nach Monat gefiltert werden können | Automatisiert / Datenbanktest |
+| [TC_017](#tc_017) | Transaktionen | Überprüfen, dass eine Einnahme gelöscht werden kann | Manuell / DAO-Workflow |
+| [TC_018](#tc_018) | Transaktionen | Überprüfen, dass eine Ausgabe gelöscht werden kann | Manuell / DAO-Workflow |
+| [TC_019](#tc_019) | Transaktionen | Überprüfen, dass eine Transaktion bearbeitet werden kann | Manuell / DAO-Workflow |
+| [TC_020](#tc_020) | Konten | Überprüfen, dass ein Konto bearbeitet werden kann | Manuell / Service-Workflow |
+| [TC_021](#tc_021) | Konten | Überprüfen, dass ein verwendetes Konto nicht gelöscht werden kann | Service-Regel |
+| [TC_022](#tc_022) | Budgets | Überprüfen, dass ein Budget bearbeitet werden kann | Automatisiert / Integrationstest |
+| [TC_023](#tc_023) | Budgets | Überprüfen, dass ein Budget gelöscht werden kann | Automatisiert / Integrationstest |
+| [TC_024](#tc_024) | Budgets | Überprüfen, dass Budgets aus dem Vormonat übernommen werden können | Service-/UI-Workflow |
+| [TC_025](#tc_025) | Transaktionen | Überprüfen, dass wiederkehrende Transaktionen erstellt werden können | Automatisiert / Integrationstest |
+| [TC_026](#tc_026) | Validierung | Überprüfen, dass ein ungültiger Betrag abgelehnt wird | Automatisiert / Validierungstest |
+| [TC_027](#tc_027) | Validierung | Überprüfen, dass ein ungültiger Transaktionstyp abgelehnt wird | Automatisiert / Validierungstest |
+| [TC_028](#tc_028) | Validierung | Überprüfen, dass Kategorie und Transaktionstyp zusammenpassen müssen | Service-Regel |
+| [TC_029](#tc_029) | Import | Überprüfen, dass ein Konto aus CSV importiert werden kann | Automatisiert / Importtest |
+| [TC_030](#tc_030) | Import | Überprüfen, dass eine Kategorie aus CSV importiert werden kann | Automatisiert / Importtest |
+| [TC_031](#tc_031) | Import | Überprüfen, dass ein Budget aus CSV importiert oder aktualisiert werden kann | Automatisiert / Importtest |
+| [TC_032](#tc_032) | Import | Überprüfen, dass Transaktionen aus CSV importiert werden können | Automatisiert / Importtest |
+| [TC_033](#tc_033) | Import | Überprüfen, dass fehlerhafte CSV-Zeilen gemeldet werden | Automatisiert / Importtest |
+| [TC_034](#tc_034) | Export | Überprüfen, dass CSV-Exportdateien erstellt werden | Automatisiert / Exporttest |
+| [TC_035](#tc_035) | Export | Überprüfen, dass mehrere CSV-Bereiche als ZIP exportiert werden | Automatisiert / Exporttest |
+| [TC_036](#tc_036) | Export | Überprüfen, dass ein PDF-Bericht erstellt wird | Automatisiert / Exporttest |
+| [TC_037](#tc_037) | Export | Überprüfen, dass der PDF-Export viele Konten paginiert | Automatisiert / Exporttest |
+| [TC_038](#tc_038) | UI | Überprüfen, dass der Darkmode umgeschaltet werden kann | Manueller UI-Test |
+| [TC_039](#tc_039) | UI | Überprüfen, dass der Hilfe-Dialog geöffnet werden kann | Manueller UI-Test |
+| [TC_040](#tc_040) | Navigation | Überprüfen, dass `/settings` zu `/accounts` weiterleitet | Manueller UI-Test |
 
 ---
 
@@ -705,5 +705,4 @@ Wichtige Grundregel im aktuellen Projektstand: Ausgaben können über den vollst
 | `tests/test_export.py` | CSV-Export, ZIP-Export und PDF-Export |
 
 ---
-
 

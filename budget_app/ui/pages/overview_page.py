@@ -174,7 +174,7 @@ def register_overview_page(controller: FinanceController) -> None:
 
             with ui.element("div").classes("bp-kpi-grid"):
                 month_nav_card("/", year, month)
-                stat_card("Noch verfügbares Monatsbudget", money(total_budget_remaining), "savings", "green" if total_budget_remaining >= 0 else "red", month_name(year, month))
+                stat_card("Noch verfügbares Monatsbudget", money(total_budget_remaining), "account_balance_wallet", "green" if total_budget_remaining >= 0 else "red", month_name(year, month))
                 stat_card("Einnahmen", money(data.overview.total_income_chf), "trending_up", "green", month_name(year, month))
                 stat_card("Ausgaben", money(data.overview.total_expenses_chf), "trending_down", "red", month_name(year, month))
 

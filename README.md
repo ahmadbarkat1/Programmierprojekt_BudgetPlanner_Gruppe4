@@ -7,6 +7,32 @@ Die Anwendung hilft Benutzern dabei Einnahmen, Ausgaben, Konten, Kategorien und 
 
 ---
 
+## Inhaltsverzeichnis
+
+| Abschnitt | Inhalt |
+| --- | --- |
+| [Problemstellung](#problemstellung) | Ausgangslage und Motivation |
+| [Lösung](#loesung) | Kurzbeschreibung der Projektlösung |
+| [Projektdokumentation](#projektdokumentation) | Links zu User Stories, Diagrammen, Tests und Screens |
+| [Projektmanagement](#projektmanagement) | Übersicht zur Planung und Organisation |
+| [Hauptfunktionen](#hauptfunktionen) | Überblick über die umgesetzten Funktionen |
+| [Screens und Navigation](#screens-und-navigation) | Wireframe und Figma-Screens |
+| [Architektur](#architektur) | Schichtenmodell und Verweis auf die technische Dokumentation |
+| [OOP- und Python-Konzepte](#oop-und-python-konzepte) | Eingesetzte OOP-/Python-Konzepte |
+| [Ausgewählte Design Patterns](#ausgewaehlte-design-patterns) | Passende Design Patterns des Projekts |
+| [Datenmodell](#datenmodell) | Entitäten, Klassendiagramm und ER-Modell |
+| [Projektstruktur](#projektstruktur) | Ordner- und Dateiaufbau |
+| [Installation](#installation) | Lokales Setup |
+| [Start](#start) | Anwendung starten |
+| [Tests](#tests) | Testausführung und Testdokumentation |
+| [Hinweise zur Präsentation](#hinweise-zur-praesentation) | Vorschlag für die Projektvorstellung |
+| [Autoren](#autoren) | Projektteam |
+| [Lizenz](#lizenz) | Projektkontext |
+
+---
+
+<a id="problemstellung"></a>
+
 ## 💡 Problemstellung
 
 Viele Personen verlieren im Alltag schnell den Überblick über ihre Finanzen:
@@ -19,6 +45,8 @@ Viele Personen verlieren im Alltag schnell den Überblick über ihre Finanzen:
 - Daten sollen bei Bedarf importiert, exportiert oder als Bericht abgelegt werden können.
 
 ---
+
+<a id="loesung"></a>
 
 ## ✅ Lösung
 
@@ -36,17 +64,32 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 
 ---
 
+<a id="projektdokumentation"></a>
+
 ## 📚 Projektdokumentation
 
 - [User Stories, Datentypen, Eingaben und erwartete Ausgaben](docs/user_stories.md)
 - [Architektur](docs/architecture.md)
 - [Klassendiagramm](docs/klassendiagramm.png)
+- [ER-Modell](docs/er_modell.png)
 - [Test Cases](docs/testcases.md)
 - [Wireframe](docs/wireframe.png)
+- [Projektmanagement](docs/projektmanagement.png)
 - Figma-Screens: [Home](docs/figma_1_home.png), [Transaktionen](docs/figma_2_transaktion.png), [Kategorien](docs/figma_3_kategorien.png), [Konten](docs/figma_4_konten.png), [Budget](docs/figma_5_budget.png)
-- Diagramme: Klassendiagramm und ER-Modell im Ordner `docs/`
 
 ---
+
+<a id="projektmanagement"></a>
+
+## Projektmanagement
+
+Das Projektmanagement zeigt die organisatorische Planung und Aufgabenübersicht des Projekts. Damit ist nachvollziehbar, wie die Projektarbeit strukturiert und vorbereitet wurde.
+
+![Projektmanagement](docs/projektmanagement.png)
+
+---
+
+<a id="hauptfunktionen"></a>
 
 ## 🛠 Hauptfunktionen
 
@@ -68,6 +111,8 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 - Speicherung in SQLite über SQLModel ORM
 
 ---
+
+<a id="screens-und-navigation"></a>
 
 ## 🖼 Screens und Navigation
 
@@ -91,27 +136,21 @@ Für die Umsetzung wurden die fokussierten Screens [Home](docs/figma_1_home.png)
 
 ---
 
+<a id="architektur"></a>
+
 ## 🧱 Architektur
 
-Die Anwendung verwendet eine Schichtenarchitektur wie im Pizzeria-Projekt:
+Die Anwendung verwendet eine Schichtenarchitektur wie im Pizzeria-Projekt. Die UI ruft Controller auf, Controller arbeiten mit Services, Services greifen über DAOs auf SQLModel/SQLite zu.
 
 ```text
 NiceGUI Pages -> Controller -> Services -> DAO -> SQLModel/SQLite
 ```
 
-Die Verantwortlichkeiten sind klar getrennt:
-
-- `budget_app/ui/pages/`: Benutzeroberfläche, Formulare, Navigation und Tabellen
-- `budget_app/ui/components/`: wiederverwendbare UI-Komponenten, Tabellen, Karten, Layout, Import und Export
-- `budget_app/ui/controllers.py`: Vermittlung zwischen UI und Services
-- `budget_app/services/`: Businesslogik, Validierung, Berechnungen, Wiederholungen und PDF-Export
-- `budget_app/data_access/dao.py`: Datenbankzugriffe über DAO-Klassen
-- `budget_app/data_access/db.py`: Datenbank-Facade für Engine, Schema und Seed-Daten
-- `budget_app/data_access/seed.py`: Demo-/Startdaten
-- `budget_app/domain/models.py`: SQLModel-Klassen und Beziehungen
-- `budget_app/utils/`: Datums- und Format-Hilfsfunktionen
+Die detaillierten Verantwortlichkeiten, ORM-Mappings und Modellentscheidungen sind in der [Architekturdokumentation](docs/architecture.md) beschrieben.
 
 ---
+
+<a id="oop-und-python-konzepte"></a>
 
 ## 🧩 OOP- und Python-Konzepte
 
@@ -121,13 +160,11 @@ Die Verantwortlichkeiten sind klar getrennt:
 | Kapselung | Datenbankzugriff nur über DAOs, Regeln in Services |
 | Single Responsibility Principle | Jede Schicht hat eine klare Aufgabe |
 | ORM | SQLModel-Modelle mit Foreign Keys und Relationships |
-| DAO Pattern | `UserDAO`, `AccountDAO`, `CategoryDAO`, `TransactionDAO`, `BudgetDAO` |
-| Facade Pattern | `Database` kapselt Engine, Schema und Session Scope |
-| Strategy Pattern | Wiederholungslogik über `RecurrenceStrategy` |
-| MVC-ähnliche Struktur | Pages, Controller, Services und Modelle |
-| Testing | Unit-, Integrations-, Datenbank-, Import-, Export- und Validierungstests |
+| Testing | Automatisierte Tests und dokumentierte manuelle Test Cases |
 
 ---
+
+<a id="ausgewaehlte-design-patterns"></a>
 
 ## 🧠 Ausgewählte Design Patterns
 
@@ -135,21 +172,11 @@ Für unser Projekt passen vor allem `Strategy`, `Facade`, `DAO` und eine MVC-äh
 
 ---
 
+<a id="datenmodell"></a>
+
 ## 🗃 Datenmodell
 
-```text
-User 1 ---- * Account
-User 1 ---- * Category
-User 1 ---- * Budget
-Account 1 ---- * Transaction
-Category 1 ---- * Transaction
-Category 1 ---- * Budget
-```
-
-Einnahmen und Ausgaben werden bewusst nicht als separate Unterklassen modelliert.  
-Beide besitzen dieselben Attribute. Der Unterschied wird über `transaction_type` (`income` oder `expense`) abgebildet.
-
-Aktuell verwendet die App einen Default User. Das Modell ist aber bereits so aufgebaut, dass mehrere Benutzer später ergänzt werden könnten.
+Das Datenmodell besteht aus `User`, `Account`, `Category`, `Transaction` und `Budget`. Einnahmen und Ausgaben werden nicht als separate Unterklassen modelliert, sondern über `transaction_type` (`income` oder `expense`) unterschieden. Die vollständigen Datentypen, Beziehungen und ORM-Mappings stehen in [User Stories](docs/user_stories.md) und [Architektur](docs/architecture.md).
 
 ### Klassendiagramm
 
@@ -160,6 +187,8 @@ Aktuell verwendet die App einen Default User. Das Modell ist aber bereits so auf
 ![ER-Modell](docs/er_modell.png)
 
 ---
+
+<a id="projektstruktur"></a>
 
 ## 📁 Projektstruktur
 
@@ -212,6 +241,8 @@ tests/
 
 ---
 
+<a id="installation"></a>
+
 ## ⚙️ Installation
 
 ```bash
@@ -233,6 +264,8 @@ pip install -r requirements.txt
 ```
 
 ---
+
+<a id="start"></a>
 
 ## ▶️ Start
 
@@ -258,6 +291,8 @@ Wenn Port `8080` bereits belegt ist, sucht die Anwendung automatisch den nächst
 
 ---
 
+<a id="tests"></a>
+
 ## 🧪 Tests
 
 Die Tests können mit folgendem Befehl ausgeführt werden:
@@ -268,20 +303,16 @@ pytest
 
 Die Tests prüfen unter anderem:
 
-- Finanzübersicht mit Einnahmen, Ausgaben und Saldo
-- Kontostandberechnung
-- Budgetstatus und Budgetüberschreitung
-- Wiederkehrende Transaktionen
-- Erstellen, Bearbeiten und Löschen von Budgets
-- SQLite-Persistenz und Monatsabfragen
-- Validierung ungültiger Transaktionen
-- CSV-Import für Konten, Kategorien, Budgets und Transaktionen
-- CSV-Export, ZIP-Export und PDF-Export
-- Integration mit SQLite-In-Memory-Datenbank
+- Finanz-, Konto- und Budgetberechnungen
+- vollständige App-Workflows mit SQLite
+- Validierung, Import und Export
+- wiederkehrende Transaktionen
 
-Die manuell beschriebenen Testfälle befinden sich in [docs/testcases.md](docs/testcases.md).
+Die vollständige Testfallübersicht mit anklickbarem Inhaltsverzeichnis befindet sich in [docs/testcases.md](docs/testcases.md).
 
 ---
+
+<a id="hinweise-zur-praesentation"></a>
 
 ## 🎤 Hinweise zur Präsentation
 
@@ -312,6 +343,8 @@ Empfohlene Präsentationslogik:
 
 ---
 
+<a id="autoren"></a>
+
 ## 👥 Autoren
 
 - Sven Birrer
@@ -319,6 +352,8 @@ Empfohlene Präsentationslogik:
 - Ahmad Barkat
 
 ---
+
+<a id="lizenz"></a>
 
 ## 📜 Lizenz
 

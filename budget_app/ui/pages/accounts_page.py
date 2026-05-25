@@ -25,7 +25,7 @@ def register_accounts_page(controller: FinanceController) -> None:
             with ui.card().classes("bp-card w-full p-6"):
                 ui.label("Neues Konto erstellen").classes("bp-section-title mb-4")
                 with ui.grid(columns="repeat(3, minmax(220px, 1fr))").classes("w-full gap-4"):
-                    name = ui.input("Kontoname", placeholder="z.B. Girokonto, Sparkonto").classes("w-full")
+                    name = ui.input("Kontoname", placeholder="z.B. Girokonto, Bankkonto").classes("w-full")
                     account_type = ui.select(ACCOUNT_TYPES, label="Kontotyp", value="Bankkonto").classes("w-full")
                     starting_balance = number_input("Startsaldo (CHF)", "0.00")
 

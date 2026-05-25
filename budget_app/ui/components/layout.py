@@ -150,7 +150,7 @@ def open_help_dialog() -> None:
 
         with ui.element("div").classes("bp-help-list mt-4"):
             with ui.element("div").classes("bp-help-item"):
-                ui.icon("savings").classes("bp-help-icon")
+                ui.icon("account_balance_wallet").classes("bp-help-icon")
                 with ui.column().classes("gap-1"):
                     ui.label("Envelope-System").classes("font-bold")
                     ui.label(
@@ -166,7 +166,7 @@ def open_help_dialog() -> None:
                 ui.icon("account_balance_wallet").classes("bp-help-icon")
                 with ui.column().classes("gap-1"):
                     ui.label("Konten").classes("font-bold")
-                    ui.label("Verwalten Sie Bankkonten, Bargeld oder Sparkonten und behalten Sie Ihre aktuellen Kontostände im Blick.").classes("bp-muted")
+                    ui.label("Verwalten Sie Bankkonten und Bargeld und behalten Sie Ihre aktuellen Kontostände im Blick.").classes("bp-muted")
             with ui.element("div").classes("bp-help-item"):
                 ui.icon("sell").classes("bp-help-icon")
                 with ui.column().classes("gap-1"):

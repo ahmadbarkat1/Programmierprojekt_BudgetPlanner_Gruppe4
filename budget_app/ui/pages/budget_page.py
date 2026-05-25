@@ -34,7 +34,7 @@ def register_budget_page(controller: FinanceController) -> None:
                 month_nav_card("/budget", year, month)
                 stat_card("Budget", money(current_budget_limit), "inventory_2", "blue", month_name(year, month))
                 stat_card("Ausgaben", money(current_expenses), "trending_down", "red", month_name(year, month))
-                stat_card("Verbleibend", money(current_remaining), "savings", "green" if current_remaining >= 0 else "red", month_name(year, month))
+                stat_card("Verbleibend", money(current_remaining), "account_balance_wallet", "green" if current_remaining >= 0 else "red", month_name(year, month))
 
             with ui.element("div").classes("bp-two-col"):
                 with ui.card().classes("bp-card w-full p-6"):

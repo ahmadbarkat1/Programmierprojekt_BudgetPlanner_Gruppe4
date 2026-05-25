@@ -9,7 +9,7 @@ SQLModel is used as ORM, meaning:
 
 Entities:
 - User: owner of accounts, categories and budgets
-- Account: financial account (bank, cash, savings)
+- Account: financial account (bank account or cash)
 - Category: grouping for income and expenses
 - Transaction: single income or expense entry
 - Budget: monthly limit per category
@@ -37,7 +37,7 @@ class User(SQLModel, table=True):
 
 
 class Account(SQLModel, table=True):
-    """A financial account such as bank account, cash or savings account."""
+    """A financial account such as bank account or cash."""
 
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True, min_length=2, max_length=80)

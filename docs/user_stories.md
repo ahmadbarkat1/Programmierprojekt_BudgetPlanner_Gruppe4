@@ -73,94 +73,20 @@ Aktuell umgesetzt sind:
 | --- | --- | --- | --- |
 | US-24 | Als Benutzer möchte ich Transaktionen nach Konto filtern, damit ich Bewegungen einzelner Konten gezielt analysieren kann. | Offen | Datenmodell unterstützt es bereits über `account_id`; UI-Filter fehlt noch. |
 | US-25 | Als Benutzer möchte ich mich einloggen können, damit mehrere Benutzer ihre eigenen Finanzdaten getrennt verwalten können. | Offen | Das Modell enthält `User`, aktuell wird ein Default User verwendet. |
-| US-26 | Als Benutzer möchte ich Sparkonten als eigenen Kontotyp wählen können. | Teilweise offen | Freitext/Modell wäre möglich, Service erlaubt aktuell `Bankkonto` und `Bargeld`. |
 
 ---
 
 ## Datenmodell und Diagramm-Abgleich
 
-Das ER-Diagramm und das Klassendiagramm bilden die folgenden Entitäten ab. Die Umsetzung befindet sich in `budget_app/domain/models.py`.
+Das ER-Diagramm und das Klassendiagramm bilden dieselben fünf Kernentitäten ab. Die Umsetzung befindet sich in `budget_app/domain/models.py`; die ausführlichen ORM-Beziehungen sind in [architecture.md](architecture.md) beschrieben.
 
-### User
-
-- `id`: int, Primary Key
-- `name`: string
-- `email`: string
-
-Beziehungen:
-
-- Ein User besitzt mehrere Accounts.
-- Ein User besitzt mehrere Categories.
-- Ein User besitzt mehrere Budgets.
-- Im aktuellen MVP arbeitet die App mit einem automatisch erstellten Default User.
-
-### Account
-
-- `id`: int, Primary Key
-- `name`: string
-- `account_type`: string, aktuell `Bankkonto` oder `Bargeld`
-- `starting_balance_chf`: float
-- `user_id`: int, Foreign Key auf `User`
-
-Beziehungen:
-
-- Ein Account gehört zu genau einem User.
-- Ein Account kann mehrere Transactions haben.
-
-### Category
-
-- `id`: int, Primary Key
-- `name`: string
-- `category_type`: string, `income` oder `expense`
-- `user_id`: int, Foreign Key auf `User`
-
-Beziehungen:
-
-- Eine Category gehört zu genau einem User.
-- Eine Category kann mehrere Transactions haben.
-- Eine Category kann mehrere Budgets haben.
-
-### Transaction
-
-- `id`: int, Primary Key
-- `amount_chf`: float, muss grösser als 0 sein
-- `transaction_type`: string, `income` oder `expense`
-- `transaction_date`: date
-- `description`: string
-- `account_id`: int, Foreign Key auf `Account`
-- `category_id`: int, Foreign Key auf `Category`
-
-Beziehungen:
-
-- Eine Transaction gehört zu genau einem Account.
-- Eine Transaction gehört zu genau einer Category.
-- Einnahmen und Ausgaben werden nicht als Unterklassen modelliert, sondern über `transaction_type` unterschieden.
-
-### Budget
-
-- `id`: int, Primary Key
-- `month`: int, 1 bis 12
-- `year`: int
-- `limit_chf`: float, muss grösser als 0 sein
-- `user_id`: int, Foreign Key auf `User`
-- `category_id`: int, Foreign Key auf `Category`
-
-Beziehungen:
-
-- Ein Budget gehört zu genau einem User.
-- Ein Budget gehört zu genau einer Ausgabenkategorie.
-- Pro User, Monat, Jahr und Kategorie darf nur ein Budget existieren.
-
-### Beziehungen im ER-Modell
-
-```text
-User 1 ---- * Account
-User 1 ---- * Category
-User 1 ---- * Budget
-Account 1 ---- * Transaction
-Category 1 ---- * Transaction
-Category 1 ---- * Budget
-```
+| Entität | Wichtige Datentypen | Beziehungen / Hinweis |
+| --- | --- | --- |
+| `User` | `id: int`, `name: string`, `email: string` | besitzt Konten, Kategorien und Budgets; aktuell wird ein Default User verwendet |
+| `Account` | `id: int`, `name: string`, `account_type: string`, `starting_balance_chf: float`, `user_id: int` | gehört zu einem User und enthält Transaktionen |
+| `Category` | `id: int`, `name: string`, `category_type: string`, `user_id: int` | gehört zu einem User; wird von Transaktionen und Budgets verwendet |
+| `Transaction` | `id: int`, `amount_chf: float`, `transaction_type: string`, `transaction_date: date`, `description: string`, `account_id: int`, `category_id: int` | gehört zu einem Konto und einer Kategorie; Einnahmen/Ausgaben werden über `transaction_type` unterschieden |
+| `Budget` | `id: int`, `month: int`, `year: int`, `limit_chf: float`, `user_id: int`, `category_id: int` | Monatsbudget pro User und Ausgabenkategorie |
 
 ---
 
@@ -311,24 +237,16 @@ Category 1 ---- * Budget
 
 ## Abgleich mit Test Cases
 
-| Bereich | Abgedeckt durch |
+Die detaillierten Testfälle stehen in [testcases.md](testcases.md). In diesem Dokument reicht ein kurzer Abgleich, damit sichtbar bleibt, welche Anforderungsbereiche getestet werden.
+
+| Bereich | Abdeckung |
 | --- | --- |
-| Einnahmen erfassen | TC_001, Integrationstests |
-| Ausgaben erfassen | TC_002, Integrationstests |
-| Kategorien erstellen, bearbeiten und löschen | TC_003, TC_013, TC_014 |
-| Budgets erstellen und anzeigen | TC_004, TC_005 |
-| Budgetüberschreitung | TC_008, Unit Tests |
-| Konten anzeigen und verwalten | TC_006, TC_012 |
-| Persistenz | TC_007, Datenbanktests |
-| Finanzberechnungen | TC_009, TC_010, TC_011, Unit Tests |
-| Transaktionen filtern | TC_015, TC_016 |
-| Transaktionen löschen | TC_017, TC_018 |
-| Wiederkehrende Transaktionen | Integrationstest `test_application_workflow_creates_recurring_budgeted_expenses` |
-| Budget bearbeiten und löschen | Integrationstest `test_budget_can_be_updated_and_deleted_through_application_workflow` |
-| CSV-Import | `tests/test_import.py` |
-| CSV- und PDF-Export | `tests/test_export.py` |
-| Validierung ungültiger Eingaben | `tests/test_validation.py` |
-| DAO und SQLite | `tests/test_db.py` |
+| Kernfunktionen | TC_001 bis TC_025 |
+| Validierung | TC_026 bis TC_028 und `tests/test_validation.py` |
+| Import | TC_029 bis TC_033 und `tests/test_import.py` |
+| Export | TC_034 bis TC_037 und `tests/test_export.py` |
+| UI und Navigation | TC_038 bis TC_040 |
+| Datenbank und Persistenz | `tests/test_db.py` und Integrationstests |
 
 ---
 
@@ -336,5 +254,4 @@ Category 1 ---- * Budget
 
 - Konto-Filter in der Transaktionsliste ergänzen
 - Login oder Benutzerwechsel für mehrere echte Benutzer umsetzen
-- Kontotypen erweitern, falls Sparkonto separat auswählbar sein soll
 - Klassendiagramm und ER-Modell bei Änderungen am Datenmodell aktuell halten
