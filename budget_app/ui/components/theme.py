@@ -8,9 +8,24 @@ from nicegui import ui
 def add_theme() -> None:
     ui.add_head_html(
         """
+        <script>
+            (() => {
+                const defaultVersion = 'light-default-v1';
+                if (localStorage.getItem('bpThemeDefaultVersion') !== defaultVersion) {
+                    localStorage.setItem('bpDarkMode', '0');
+                    localStorage.setItem('bpThemeDefaultVersion', defaultVersion);
+                }
+                const isDark = localStorage.getItem('bpDarkMode') === '1';
+                document.documentElement.dataset.bpTheme = isDark ? 'dark' : 'light';
+            })();
+        </script>
         <style>
+            html { background: #e6edf7; }
+            html[data-bp-theme="dark"] { background: #08111f; }
             body { background: #e6edf7; color: #111827; overflow-x: hidden; }
             .q-page { background: radial-gradient(circle at 8% 0%, #bff3e7 0, transparent 25%), radial-gradient(circle at 92% 7%, #ffcdd7 0, transparent 24%), radial-gradient(circle at 58% 105%, #dbeafe 0, transparent 28%), #e6edf7; }
+            html[data-bp-theme="dark"] body { background: #08111f; color: #e5edf7; }
+            html[data-bp-theme="dark"] .q-page { background: radial-gradient(circle at 8% 0%, #083f3c 0, transparent 25%), radial-gradient(circle at 92% 8%, #3b164f 0, transparent 24%), radial-gradient(circle at 55% 110%, #102a55 0, transparent 28%), #08111f; }
             .bp-shell { width: 100%; max-width: none; margin: 0; padding: 0 clamp(20px, 2.4vw, 48px); }
             .bp-header { background: rgba(255, 255, 255, .88); border-bottom: 1px solid #dbe3ef; box-shadow: 0 10px 30px rgb(15 23 42 / 0.08); backdrop-filter: blur(14px); }
             .bp-brand-icon { font-size: 46px; }
@@ -413,12 +428,20 @@ def add_theme() -> None:
                     button.setAttribute('aria-label', isDark ? 'Lightmode aktivieren' : 'Darkmode aktivieren');
                 });
             };
-            window.addEventListener('load', () => {
-                const isDark = localStorage.getItem('bpDarkMode') === '1';
-                if (isDark) {
-                    document.body.classList.add('bp-dark');
+            window.bpApplyStoredTheme = () => {
+                const defaultVersion = 'light-default-v1';
+                if (localStorage.getItem('bpThemeDefaultVersion') !== defaultVersion) {
+                    localStorage.setItem('bpDarkMode', '0');
+                    localStorage.setItem('bpThemeDefaultVersion', defaultVersion);
                 }
+                const isDark = localStorage.getItem('bpDarkMode') === '1';
+                document.documentElement.dataset.bpTheme = isDark ? 'dark' : 'light';
+                document.body?.classList.toggle('bp-dark', isDark);
                 window.bpUpdateDarkModeButtons(isDark);
+            };
+            document.addEventListener('DOMContentLoaded', window.bpApplyStoredTheme);
+            window.addEventListener('load', () => {
+                window.bpApplyStoredTheme();
                 if (sessionStorage.getItem('bpPrintAfterLoad') === '1') {
                     sessionStorage.removeItem('bpPrintAfterLoad');
                     window.setTimeout(() => window.print(), 650);

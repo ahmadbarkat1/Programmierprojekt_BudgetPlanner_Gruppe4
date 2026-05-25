@@ -133,6 +133,7 @@ def toggle_dark_mode() -> None:
         """
         document.body.classList.toggle('bp-dark');
         const isDark = document.body.classList.contains('bp-dark');
+        document.documentElement.dataset.bpTheme = isDark ? 'dark' : 'light';
         localStorage.setItem('bpDarkMode', isDark ? '1' : '0');
         window.bpUpdateDarkModeButtons?.(isDark);
         """

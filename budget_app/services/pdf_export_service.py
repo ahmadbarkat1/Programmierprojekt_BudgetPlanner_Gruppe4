@@ -199,12 +199,12 @@ def _budgets_page(controller: "FinanceController", year: int, month: int, show_d
             )
             commands.append(_text(MARGIN, 590, "Budgets für diesen Monat", 13, True, COLORS["text"]))
             card_w = (CONTENT_WIDTH - 24) / 3
-            card_h = 130
+            card_h = 112
             for tile_index in range(len(chunk) + 1):
                 col = tile_index % 3
                 row = tile_index // 3
                 x = MARGIN + col * (card_w + 12)
-                y = 438 - row * 146
+                y = 438 - row * 128
                 if tile_index == 0:
                     _budget_total_card(commands, x, y, card_w, card_h, remaining, expenses, budget_limit)
                 else:
@@ -244,6 +244,7 @@ def _transactions_page(controller: "FinanceController", year: int, month: int, s
         show_document_title,
         ["Datum", "Typ", "Kategorie", "Konto", "Beschreibung", "Betrag"],
         rows,
+        align_right={5},
         color_column=5,
         pill_column=1,
         intro=month_name(year, month),
@@ -432,21 +433,21 @@ def _budget_total_card(commands: list[str], x: float, y: float, width: float, he
     commands.append(_round_rect(x, y, width, height, 6, COLORS["header"]))
     commands.append(_text(x + 10, y + height - 20, "Alle Budgets", 6.5, False, "#ffffff"))
     commands.append(_text(x + 10, y + height - 43, _money(remaining), 13.2, True, "#ffffff"))
-    commands.append(_text(x + 10, y + height - 60, f"{_money(expenses)} von {_money(limit)}", 6.2, False, "#ffffff"))
-    commands.append(_round_rect(x + 10, y + 56, width - 20, 5, 2.5, "#dbe3ef"))
-    commands.append(_round_rect(x + 10, y + 56, (width - 20) * min(max(usage, 0), 100) / 100, 5, 2.5, tone))
+    bar_y = y + height - 61
+    commands.append(_round_rect(x + 10, bar_y, width - 20, 5, 2.5, "#dbe3ef"))
+    commands.append(_round_rect(x + 10, bar_y, (width - 20) * min(max(usage, 0), 100) / 100, 5, 2.5, tone))
     third = (width - 22) / 3
     for index, (label, value, color) in enumerate(
         [
-            ("Budget", _money(limit, decimals=0), "#ffffff"),
-            ("Verbrauch", _money(expenses, decimals=0), "#ffffff"),
-            ("Rest", _money(remaining, decimals=0), "#ffffff"),
+            ("Budget", _money(limit), "#ffffff"),
+            ("Verbrauch", _money(expenses), "#ffffff"),
+            ("Rest", _money(remaining), "#ffffff"),
         ]
     ):
         box_x = x + 8 + index * (third + 3)
         commands.append(_round_rect(box_x, y + 14, third, 34, 5, "#1f2937"))
         commands.append(_text(box_x + 5, y + 36, label, 5.7, False, "#cbd5e1"))
-        commands.append(_text(box_x + 5, y + 22, _clip(value, 9), 6.7, True, color))
+        commands.append(_fit_text(box_x + 5, y + 22, value, third - 9, 6.7, 5.0, True, color))
 
 
 def _budget_card(commands: list[str], x: float, y: float, width: float, height: float, status) -> None:
@@ -457,21 +458,22 @@ def _budget_card(commands: list[str], x: float, y: float, width: float, height: 
     commands.append(_line([(x, y), (x, y + height)], tone, 2.2))
     commands.append(_text(x + 12, y + height - 22, _clip(status.budget.category.name, 16), 10, True, COLORS["text"]))
     commands.append(_text(x + width - 50, y + height - 22, f"{percent:.0f}%", 10, True, tone))
-    commands.append(_rect(x + 12, y + height - 70, width - 24, 6, "#e5e7eb"))
-    commands.append(_rect(x + 12, y + height - 70, (width - 24) * min(max(percent, 0), 100) / 100, 6, tone))
+    bar_y = y + height - 56
+    commands.append(_round_rect(x + 12, bar_y, width - 24, 6, 3, "#e5e7eb"))
+    commands.append(_round_rect(x + 12, bar_y, (width - 24) * min(max(percent, 0), 100) / 100, 6, 3, tone))
     third = (width - 22) / 3
     for index, (label, value, color) in enumerate(
         [
-            ("Budget", _money(limit, decimals=0), COLORS["text"]),
-            ("Verbrauch", _money(status.spent_chf, decimals=0), COLORS["text"]),
-            ("Rest", _money(status.remaining_chf, decimals=0), tone),
+            ("Budget", _money(limit), COLORS["text"]),
+            ("Verbrauch", _money(status.spent_chf), COLORS["text"]),
+            ("Rest", _money(status.remaining_chf), tone),
         ]
     ):
         box_x = x + 8 + index * (third + 3)
         commands.append(_rect(box_x, y + 16, third, 34, "#f8fafc"))
         commands.append(_stroke_rect(box_x, y + 16, third, 34, "#e5e7eb", 0.35))
         commands.append(_text(box_x + 5, y + 38, label, 5.8, False, COLORS["muted"]))
-        commands.append(_text(box_x + 5, y + 24, value, 7.1, True, color))
+        commands.append(_fit_text(box_x + 5, y + 24, value, third - 9, 7.1, 5.2, True, color))
 
 
 def _category_chart(commands: list[str], x: float, y: float, width: float, height: float, totals: dict[str, float]) -> None:
@@ -509,7 +511,7 @@ def _monthly_chart(commands: list[str], x: float, y: float, width: float, height
     chart_w = width - 58
     raw_max = max(max(float(item["income"]), float(item["expenses"])) for item in values) or 1
     max_value = _nice_axis_max(raw_max)
-    _grid(commands, chart_x, chart_y, chart_w, chart_h, max_value)
+    _grid(commands, chart_x, chart_y, chart_w, chart_h, max_value, divisions=5, include_zero=True)
     group = chart_w / len(values)
     bar_w = min(12, group * 0.22)
     for index, item in enumerate(values):
@@ -539,7 +541,13 @@ def _progress_chart(commands: list[str], x: float, y: float, width: float, heigh
         commands.append(_circle(point[0], point[1], 1.4, "#ffffff", COLORS["muted"], 0.8))
     for point in current_points:
         commands.append(_circle(point[0], point[1], 1.8, "#ffffff", COLORS["blue"], 0.9))
-    commands.append(_text(chart_x + chart_w / 2 - 28, chart_y - 24, "Tage im Monat", 7, True, COLORS["muted"]))
+    day_count = max(len(average), len(current), 1)
+    for day in [1, 5, 10, 15, 20, 25, day_count]:
+        if 1 <= day <= day_count:
+            tick_x = chart_x + (day - 1) / max(day_count - 1, 1) * chart_w
+            commands.append(_line([(tick_x, chart_y), (tick_x, chart_y - 3)], "#cbd5e1", 0.45))
+            commands.append(_text(tick_x - 4, chart_y - 13, str(day), 5.8, False, COLORS["muted"]))
+    commands.append(_text(chart_x + chart_w / 2 - 28, chart_y - 28, "Tage im Monat", 7, True, COLORS["muted"]))
     commands.append(_text_rotated(x + 20, chart_y + chart_h / 2 - 35, "Ausgabe (CHF)", 7, True, COLORS["muted"], 90))
     _line_legend(commands, x + 48, y + height - 36, [("Durchschnitt letzte 3 Monate", COLORS["muted"]), ("Aktuelle Ausgaben", COLORS["blue"])])
 
@@ -568,7 +576,9 @@ def _table(
     cursor = x + 8
     for index, header in enumerate(headers):
         col_w = width * columns[index]
-        commands.append(_text(cursor, y + height - 17, header, 7.4, True, COLORS["muted"]))
+        header_padding = 16 if index in align_right else 8
+        header_x = cursor if index not in align_right else cursor + col_w - header_padding - _estimated_text_width(header, 7.4)
+        commands.append(_text(header_x, y + height - 17, header, 7.4, True, COLORS["muted"]))
         cursor += col_w
     line_y = y + height - 26 - row_h
     for row in visible_rows:
@@ -579,10 +589,18 @@ def _table(
             color = COLORS["text"]
             if color_column == index:
                 color = COLORS["red"] if str(value).strip().startswith("-") else COLORS["green"]
-            text_x = cursor if index not in align_right else cursor + col_w - 8 - _estimated_text_width(str(value), font_size)
+            right_padding = 16 if index in align_right else 8
+            text_x = cursor if index not in align_right else cursor + col_w - right_padding - _estimated_text_width(str(value), font_size)
             if pill_column == index:
                 pill_color = COLORS["green"] if str(value) == "Einnahme" else COLORS["red"]
                 commands.append(_pill(text_x, line_y + 3, str(value), pill_color))
+            elif index in align_right and "CHF " in str(value):
+                prefix, amount = str(value).split(" ", 1)
+                amount_right = cursor + col_w - right_padding
+                prefix_x = max(cursor + 2, amount_right - 58)
+                amount_x = amount_right - _estimated_text_width(amount, font_size)
+                commands.append(_text(prefix_x, line_y + 5, prefix, font_size, False, color))
+                commands.append(_text(amount_x, line_y + 5, amount, font_size, False, color))
             else:
                 commands.append(_text(text_x, line_y + 5, _clip(str(value), max(8, int(col_w / (font_size * 0.48)))), font_size, False, color))
             cursor += col_w
@@ -596,7 +614,7 @@ def _column_widths(headers: list[str]) -> list[float]:
         3: [0.48, 0.31, 0.21],
         4: [0.34, 0.22, 0.22, 0.22],
         5: [0.33, 0.17, 0.18, 0.17, 0.15],
-        6: [0.14, 0.13, 0.18, 0.16, 0.27, 0.12],
+        6: [0.13, 0.12, 0.17, 0.15, 0.27, 0.16],
     }
     return presets.get(len(headers), [1 / len(headers)] * len(headers))
 
@@ -679,12 +697,23 @@ def _pill(x: float, y: float, text: str, color: str) -> str:
     )
 
 
-def _grid(commands: list[str], x: float, y: float, width: float, height: float, max_value: float) -> None:
+def _grid(
+    commands: list[str],
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    max_value: float,
+    divisions: int = 4,
+    include_zero: bool = False,
+) -> None:
     commands.append(_line([(x, y), (x + width, y)], "#cbd5e1", 0.5))
-    for index in range(1, 4):
-        grid_y = y + height * index / 4
-        commands.append(_line([(x, grid_y), (x + width, grid_y)], "#e5e7eb", 0.35))
-        commands.append(_text(x - 30, grid_y - 2, _compact(max_value * index / 4), 5.7, False, COLORS["muted"]))
+    start = 0 if include_zero else 1
+    for index in range(start, divisions + 1):
+        grid_y = y + height * index / divisions
+        if index > 0:
+            commands.append(_line([(x, grid_y), (x + width, grid_y)], "#e5e7eb", 0.35))
+        commands.append(_text(x - 30, grid_y - 2, _compact(max_value * index / divisions), 5.7, False, COLORS["muted"]))
 
 
 def _line_legend(commands: list[str], x: float, y: float, items: list[tuple[str, str]]) -> None:
@@ -844,6 +873,14 @@ def _text(x: float, y: float, text: str, size: float, bold: bool, color: str) ->
     font = "F2" if bold else "F1"
     r, g, b = _hex_to_rgb(color)
     return f"{r:.3f} {g:.3f} {b:.3f} rg BT /{font} {size:.1f} Tf {x:.1f} {y:.1f} Td ({_escape(text)}) Tj ET"
+
+
+def _fit_text(x: float, y: float, text: str, max_width: float, max_size: float, min_size: float, bold: bool, color: str) -> str:
+    size = max_size
+    estimated = _estimated_text_width(text, size)
+    if estimated > max_width:
+        size = max(min_size, max_width / max(len(text) * 0.48, 1))
+    return _text(x, y, text, size, bold, color)
 
 
 def _text_rotated(x: float, y: float, text: str, size: float, bold: bool, color: str, angle: int) -> str:
