@@ -4,6 +4,21 @@ Dieses Dokument beschreibt den aktuellen Projektstand des Budget Planners. Es is
 
 ---
 
+## Inhaltsverzeichnis
+
+| Abschnitt | Inhalt |
+| --- | --- |
+| [Projektstand](#projektstand) | Aktueller Funktionsumfang |
+| [User Stories](#user-stories) | Umgesetzte und offene Anforderungen |
+| [Datenmodell und Diagramm-Abgleich](#datenmodell-und-diagramm-abgleich) | Entitäten, Datentypen und Beziehungen |
+| [Eingaben](#eingaben) | Benutzereingaben und Import-/Exportoptionen |
+| [Erwartete Ausgaben](#erwartete-ausgaben) | Ergebnisse und Anzeigen der Anwendung |
+| [Validierungsregeln](#validierungsregeln) | Fachliche Regeln und Einschränkungen |
+| [Abgleich mit Test Cases](#abgleich-mit-test-cases) | Zuordnung zu Tests und Testfällen |
+| [Offene Punkte](#offene-punkte) | Noch mögliche Erweiterungen |
+
+---
+
 ## Projektstand
 
 Der Budget Planner ist eine browserbasierte Python-Anwendung zur Verwaltung persönlicher Finanzen. Die Anwendung nutzt eine Schichtenarchitektur:
@@ -73,6 +88,10 @@ Aktuell umgesetzt sind:
 | --- | --- | --- | --- |
 | US-24 | Als Benutzer möchte ich Transaktionen nach Konto filtern, damit ich Bewegungen einzelner Konten gezielt analysieren kann. | Offen | Datenmodell unterstützt es bereits über `account_id`; UI-Filter fehlt noch. |
 | US-25 | Als Benutzer möchte ich mich einloggen können, damit mehrere Benutzer ihre eigenen Finanzdaten getrennt verwalten können. | Offen | Das Modell enthält `User`, aktuell wird ein Default User verwendet. |
+| US-26 | Als Benutzer möchte ich zwischen Freemium und Premium wählen können, damit einfache Grundfunktionen kostenlos und erweiterte Funktionen optional verfügbar sind. | Idee | Denkbar wären z. B. mehr Exportoptionen, mehr Auswertungen oder erweiterte Automatisierungen im Premium-Bereich. |
+| US-27 | Als Benutzer möchte ich Widgets oder Kacheln selbst anordnen können, damit ich die Übersicht an meine persönlichen Prioritäten anpassen kann. | Idee | Betrifft vor allem Dashboard und Kartenlayout. |
+| US-28 | Als Benutzer möchte ich Transaktionen per Spracheingabe erfassen können, damit Einnahmen und Ausgaben schneller eingetragen werden können. | Idee | Benötigt zusätzliche Eingabe- und Erkennungslogik. |
+| US-29 | Als Benutzer möchte ich eine passende mobile App nutzen können, damit ich meine Finanzen auch unterwegs einfach verwalten kann. | Idee | Aktuell ist die Anwendung als browserbasierte NiceGUI-App umgesetzt. |
 
 ---
 
@@ -254,4 +273,8 @@ Die detaillierten Testfälle stehen in [testcases.md](testcases.md). In diesem D
 
 - Konto-Filter in der Transaktionsliste ergänzen
 - Login oder Benutzerwechsel für mehrere echte Benutzer umsetzen
+- Freemium-/Premium-Modell für unterschiedliche Funktionsumfänge prüfen
+- Widgets oder Dashboard-Kacheln frei anordnen lassen
+- Spracheingabe für Transaktionen prüfen
+- Passende mobile App als Erweiterung planen
 - Klassendiagramm und ER-Modell bei Änderungen am Datenmodell aktuell halten

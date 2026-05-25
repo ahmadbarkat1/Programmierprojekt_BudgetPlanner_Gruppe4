@@ -30,7 +30,7 @@ NiceGUI Pages -> Controller -> Services -> DAO -> SQLModel/SQLite
 - DAO Pattern
 - Facade Pattern in `Database`
 - Strategy Pattern in `RecurrenceService`
-- MVC-aehnliche Schichtung
+- MVC-ähnliche Schichtung
 - Unit-, Integrations-, Datenbank-, Import-, Export- und Validierungstests
 
 ## Define Logical Entities (ORM Entities)
