@@ -337,4 +337,4 @@ Category 1 ---- * Budget
 - Konto-Filter in der Transaktionsliste ergänzen
 - Login oder Benutzerwechsel für mehrere echte Benutzer umsetzen
 - Kontotypen erweitern, falls Sparkonto separat auswählbar sein soll
-- Architektur-Dokument bei Bedarf ebenfalls um Import, Export, PDF-Bericht, Darkmode und wiederkehrende Transaktionen ergänzen
+- Klassendiagramm und ER-Modell bei Änderungen am Datenmodell aktuell halten

@@ -706,8 +706,4 @@ Wichtige Grundregel im aktuellen Projektstand: Ausgaben können über den vollst
 
 ---
 
-## Offene Testpunkte
 
-- Automatisierte Browser-/UI-Tests für Filter, Dialoge, Darkmode und Hilfe-Dialog sind noch nicht umgesetzt.
-- Filterung von Transaktionen nach Konto ist noch nicht umgesetzt und deshalb nicht als bestandener Testfall aufgeführt.
-- Login oder mehrere echte Benutzer sind noch nicht umgesetzt; die App verwendet aktuell einen automatisch erstellten Default User.

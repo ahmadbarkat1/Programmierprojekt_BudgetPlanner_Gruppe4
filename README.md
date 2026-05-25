@@ -40,6 +40,7 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 
 - [User Stories, Datentypen, Eingaben und erwartete Ausgaben](docs/user_stories.md)
 - [Architektur](docs/architecture.md)
+- [Klassendiagramm](<docs/budgetplanner klassendiagram.png>)
 - [Test Cases](docs/testcases.md)
 - Diagramme: Klassendiagramm und ER-Modell im Ordner `docs/`
 
