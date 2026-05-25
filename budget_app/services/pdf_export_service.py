@@ -5,7 +5,7 @@ from __future__ import annotations
 from calendar import monthrange
 from collections import defaultdict
 from io import BytesIO
-from math import cos, pi, sin
+from math import cos, floor, log10, pi, sin
 from typing import TYPE_CHECKING
 
 from ..utils.date_utils import month_name, month_short_label, previous_month, previous_months
@@ -14,15 +14,15 @@ if TYPE_CHECKING:
     from ..ui.controllers import FinanceController
 
 
-PAGE_WIDTH = 842
-PAGE_HEIGHT = 595
-MARGIN = 8
+PAGE_WIDTH = 595.276
+PAGE_HEIGHT = 841.89
+MARGIN = 28.3464
 CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2
 
 COLORS = {
-    "page": "#f8fafc",
-    "card": "#ffffff",
-    "border": "#dbe3ef",
+    "page": "#ffffff",
+    "card": "#fcfdff",
+    "border": "#e5e7eb",
     "text": "#111827",
     "muted": "#64748b",
     "header": "#111827",
@@ -40,45 +40,36 @@ AREA_ORDER = ["overview", "accounts", "categories", "budgets", "transactions"]
 
 
 def export_budgetplanner_pdf(controller: "FinanceController", areas: list[str], year: int, month: int) -> bytes:
-    """Create a compact A4 portrait PDF with at most one page per selected area."""
+    """Create an A4 portrait PDF and paginate sections when their content grows."""
     selected = [area for area in AREA_ORDER if area in areas]
     pages = []
     for area in selected:
         show_document_title = not pages
         if area == "overview":
-            pages.append(_overview_page(controller, year, month, show_document_title))
+            pages.extend(_overview_page(controller, year, month, show_document_title))
         if area == "accounts":
-            pages.append(_accounts_page(controller, year, month, show_document_title))
+            pages.extend(_accounts_page(controller, year, month, show_document_title))
         if area == "categories":
-            pages.append(_categories_page(controller, year, month, show_document_title))
+            pages.extend(_categories_page(controller, year, month, show_document_title))
         if area == "budgets":
-            pages.append(_budgets_page(controller, year, month, show_document_title))
+            pages.extend(_budgets_page(controller, year, month, show_document_title))
         if area == "transactions":
-            pages.append(_transactions_page(controller, year, month, show_document_title))
+            pages.extend(_transactions_page(controller, year, month, show_document_title))
     return _build_pdf(pages)
 
 
 def _base_page(section_title: str, year: int, month: int, show_document_title: bool) -> list[str]:
     commands = [_rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, COLORS["page"])]
-    _page_wash(commands)
-    commands.append(_text(MARGIN, PAGE_HEIGHT - 26, section_title, 17, True, COLORS["text"]))
-    subtitle = {
-        "Übersicht": "Dein Budgetstatus für den aktuellen Monat auf einen Blick.",
-        "Konten": "Verwalte Bankkonto und Bargeld mit klarem aktuellem Saldo.",
-        "Kategorien": "Ordne Einnahmen und Ausgaben sauber deinen Budgets zu.",
-        "Budget": "Plane dein Monatsbudget nach Kategorie und sieh sofort, wo du noch Luft hast.",
-        "Transaktionen": "Erfasse Einnahmen und Ausgaben mit passenden Kategorien und Konten.",
-    }.get(section_title, "")
-    if subtitle:
-        commands.append(_text(MARGIN, PAGE_HEIGHT - 45, subtitle, 8.6, False, COLORS["muted"]))
+    _brand_header(commands, year, month)
+    commands.append(_text(MARGIN, 740.7501, section_title, 19, True, COLORS["text"]))
     return commands
 
 
 def _content_top(show_document_title: bool) -> float:
-    return 545
+    return 695.622
 
 
-def _overview_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> bytes:
+def _overview_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> list[bytes]:
     data = controller.dashboard_data(year=year, month=month)
     all_transactions = controller.list_recent_transactions()
     accounts = controller.list_accounts()
@@ -121,44 +112,49 @@ def _overview_page(controller: "FinanceController", year: int, month: int, show_
         )
     average, current = _expense_progress_series(controller, year, month)
 
-    _category_chart(commands, 8, 240, 410, 230, category_totals)
-    _monthly_chart(commands, 426, 240, 408, 230, monthly)
-    _progress_chart(commands, 8, 18, 684, 205, average, current)
-    return _stream(commands)
+    chart_gap = 16
+    chart_width = (CONTENT_WIDTH - chart_gap) / 2
+    _category_chart(commands, MARGIN, 304, 206.85, 248, category_totals)
+    _monthly_chart(commands, 238.1102, 304, 328.82, 248, monthly)
+    _progress_chart(commands, MARGIN, 25, CONTENT_WIDTH, 268, average, current)
+    return [_stream(commands)]
 
 
-def _accounts_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> bytes:
-    commands = _base_page("Konten", year, month, show_document_title)
+def _accounts_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> list[bytes]:
     accounts = controller.list_accounts()
     transactions = controller.list_recent_transactions()
     total_start = sum(account.starting_balance_chf for account in accounts)
     total_balance = sum(_account_balance(account, transactions) for account in accounts)
-    top = _content_top(show_document_title)
-    commands.append(_text(12, top - 34, "Gesamtübersicht", 10.5, True, COLORS["text"]))
-    panel_y = top - 142
-    _card(commands, 3, panel_y, 836, 100)
-    commands.append(_rect(12, panel_y + 18, 280, 64, COLORS["header"]))
-    commands.append(_text(24, panel_y + 60, "Aktueller Gesamtsaldo", 6.8, False, "#ffffff"))
-    commands.append(_text(24, panel_y + 34, _money(total_balance), 17, True, "#ffffff"))
-    commands.append(_text(24, panel_y + 14, f"{len(accounts)} Konten aktiv", 9.2, False, "#ffffff"))
-    _mini_summary(commands, 300, panel_y + 18, 262, 64, "Anzahl Konten", str(len(accounts)))
-    _mini_summary(commands, 570, panel_y + 18, 260, 64, "Gesamter Startsaldo", _money(total_start))
+    pages: list[bytes] = []
 
-    card_w = 274
-    card_h = 150
-    gap = 10
-    start_y = panel_y - 165
-    for index, account in enumerate(accounts[:6]):
-        col = index % 3
-        row = index // 3
-        x = 3 + col * (card_w + gap)
-        y = start_y - row * (card_h + 12)
-        _account_card(commands, x, y, card_w, card_h, account, transactions)
-    return _stream(commands)
+    first_page_slots = 6
+    later_page_slots = 9
+    chunks = [accounts[:first_page_slots]]
+    remaining_accounts = accounts[first_page_slots:]
+    chunks.extend(_chunks(remaining_accounts, later_page_slots))
+    if not chunks:
+        chunks = [[]]
+
+    for page_index, chunk in enumerate(chunks):
+        commands = _base_page("Konten", year, month, show_document_title and page_index == 0)
+        if page_index == 0:
+            commands.append(_text(MARGIN, 686.1577, "Gesamtübersicht", 13, True, COLORS["text"]))
+            panel_y = 560.1614
+            _summary_card(commands, MARGIN, panel_y, 208.82, 76.5, "Aktueller Gesamtsaldo", _money(total_balance), f"{len(accounts)} Konten aktiv", COLORS["header"])
+            _summary_card(commands, 260.4065, panel_y, 141.73, 76.5, "Anzahl Konten", str(len(accounts)), "", COLORS["card"])
+            _summary_card(commands, 425.1968, panel_y, 141.73, 76.5, "Gesamter Startsaldo", _money(total_start), "", COLORS["card"])
+            grid_top = 510.29
+            columns = 3
+        else:
+            commands.append(_text(MARGIN, 690, f"Weitere Konten ({page_index + 1})", 13, True, COLORS["text"]))
+            grid_top = 660
+            columns = 3
+        _account_grid(commands, chunk, transactions, MARGIN, grid_top, CONTENT_WIDTH, columns)
+        pages.append(_stream(commands))
+    return pages
 
 
-def _categories_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> bytes:
-    commands = _base_page("Kategorien", year, month, show_document_title)
+def _categories_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> list[bytes]:
     transactions = controller.list_recent_transactions()
     rows = [
         [
@@ -168,58 +164,67 @@ def _categories_page(controller: "FinanceController", year: int, month: int, sho
         ]
         for category in controller.list_categories()
     ]
-    _table(commands, 8, 22, 640, 500, ["Kategoriename", "Typ", "Verwendungen"], rows, pill_column=1)
-    return _stream(commands)
+    return _table_pages("Kategorien", year, month, show_document_title, ["Kategoriename", "Typ", "Verwendungen"], rows, pill_column=1)
 
 
-def _budgets_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> bytes:
+def _budgets_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> list[bytes]:
     data = controller.dashboard_data(year=year, month=month)
     budgets = controller.list_budgets(year=year, month=month)
     budget_limit = sum(budget.limit_chf for budget in budgets)
     expenses = sum(transaction.amount_chf for transaction in data.transactions if transaction.transaction_type == "expense")
     remaining = budget_limit - expenses
     usage = expenses / budget_limit * 100 if budget_limit else 0
+    pages: list[bytes] = []
 
-    commands = _base_page("Budget", year, month, show_document_title)
-    top = _content_top(show_document_title)
-    _metric_cards(
-        commands,
-        [
-            ("Budget", _money(budget_limit), COLORS["blue"]),
-            ("Ausgaben", _money(expenses), COLORS["red"]),
-            ("Verbleibend", _money(remaining), COLORS["green"] if remaining >= 0 else COLORS["red"]),
-            ("Auslastung", f"{usage:.0f}%", COLORS["amber"] if usage >= 80 else COLORS["teal"]),
-        ],
-        top,
-        month_name(year, month),
-    )
-    commands.append(_text(8, 388, "Budgets für diesen Monat", 12, True, COLORS["text"]))
-    _budget_total_card(commands, 8, 228, 154, 130, remaining, expenses, budget_limit)
-    card_w = 154
-    card_h = 130
-    for index, status in enumerate(data.budget_statuses[:9]):
-        if index < 4:
-            x = 170 + index * (card_w + 8)
-            y = 228
+    first_page_slots = 8
+    later_page_slots = 8
+    chunks = [data.budget_statuses[:first_page_slots]]
+    chunks.extend(_chunks(data.budget_statuses[first_page_slots:], later_page_slots))
+    if not chunks:
+        chunks = [[]]
+
+    for page_index, chunk in enumerate(chunks):
+        commands = _base_page("Budget", year, month, show_document_title and page_index == 0)
+        top = _content_top(show_document_title)
+        if page_index == 0:
+            _metric_cards(
+                commands,
+                [
+                    ("Budget", _money(budget_limit), COLORS["blue"]),
+                    ("Ausgaben", _money(expenses), COLORS["red"]),
+                    ("Verbleibend", _money(remaining), COLORS["green"] if remaining >= 0 else COLORS["red"]),
+                ],
+                top,
+                month_name(year, month),
+            )
+            commands.append(_text(MARGIN, 590, "Budgets für diesen Monat", 13, True, COLORS["text"]))
+            card_w = (CONTENT_WIDTH - 24) / 3
+            card_h = 130
+            for tile_index in range(len(chunk) + 1):
+                col = tile_index % 3
+                row = tile_index // 3
+                x = MARGIN + col * (card_w + 12)
+                y = 438 - row * 146
+                if tile_index == 0:
+                    _budget_total_card(commands, x, y, card_w, card_h, remaining, expenses, budget_limit)
+                else:
+                    _budget_card(commands, x, y, card_w, card_h, chunk[tile_index - 1])
         else:
-            x = 8 + (index - 4) * (card_w + 8)
-            y = 80
-        _budget_card(commands, x, y, card_w, card_h, status)
-    return _stream(commands)
+            commands.append(_text(MARGIN, 690, f"Weitere Budgets ({page_index + 1})", 13, True, COLORS["text"]))
+            _budget_grid(commands, chunk, MARGIN, 650, CONTENT_WIDTH)
+        pages.append(_stream(commands))
+    return pages
 
 
-def _transactions_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> bytes:
-    commands = _base_page("Transaktionen", year, month, show_document_title)
+def _transactions_page(controller: "FinanceController", year: int, month: int, show_document_title: bool) -> list[bytes]:
     user = controller.default_user()
     transactions = sorted(
         controller.transaction_service.list_for_month(year=year, month=month, user_id=user.id),
         key=lambda item: (item.transaction_date, item.id or 0),
         reverse=True,
     )
-    max_rows = 28
-    visible = transactions[:max_rows]
     rows = []
-    for transaction in visible:
+    for transaction in transactions:
         is_income = transaction.transaction_type == "income"
         amount = transaction.amount_chf if is_income else -transaction.amount_chf
         rows.append(
@@ -232,11 +237,140 @@ def _transactions_page(controller: "FinanceController", year: int, month: int, s
                 _money(amount),
             ]
         )
-    commands.append(_text(8, 492, month_name(year, month), 9.5, True, COLORS["text"]))
-    _table(commands, 6, 22, 830, 450, ["Datum", "Typ", "Kategorie", "Konto", "Beschreibung", "Betrag"], rows, color_column=5, pill_column=1)
-    if len(transactions) > max_rows:
-        commands.append(_text(40, 102, "Weitere Transaktionen sind in der App sichtbar.", 8, False, COLORS["muted"]))
-    return _stream(commands)
+    return _table_pages(
+        "Transaktionen",
+        year,
+        month,
+        show_document_title,
+        ["Datum", "Typ", "Kategorie", "Konto", "Beschreibung", "Betrag"],
+        rows,
+        color_column=5,
+        pill_column=1,
+        intro=month_name(year, month),
+        rows_per_page=27,
+    )
+
+
+def _brand_header(commands: list[str], year: int, month: int) -> None:
+    icon_x = MARGIN
+    icon_y = 785.8
+    _budget_planner_icon(commands, icon_x, icon_y, 22.0)
+    commands.append(_text(icon_x + 29.0, 793.0, "Budget Planner", 11.4, True, COLORS["text"]))
+    commands.append(_text(484.4937, 795.4589, month_name(year, month), 19, True, COLORS["text"]))
+
+
+def _budget_planner_icon(commands: list[str], x: float, y: float, size: float) -> None:
+    commands.append(_round_rect(x, y, size, size, 2.0, COLORS["teal"]))
+    commands.append(_round_rect(x + size * 0.32, y + size * 0.25, size * 0.52, size * 0.50, 1.0, "#ffffff"))
+    commands.append(_rect(x + size * 0.50, y + size * 0.39, size * 0.34, size * 0.22, COLORS["teal"]))
+    commands.append(_round_rect(x + size * 0.61, y + size * 0.44, size * 0.13, size * 0.13, 0.7, "#ffffff"))
+
+
+def _account_icon(commands: list[str], x: float, y: float, is_bank: bool) -> None:
+    bg = "#dbeafe" if is_bank else "#fef3c7"
+    fg = COLORS["blue"] if is_bank else "#92400e"
+    commands.append(_round_rect(x, y, 26, 26, 7, bg))
+    if is_bank:
+        commands.append(_polygon([(x + 5, y + 15), (x + 13, y + 21), (x + 21, y + 15)], fg))
+        commands.append(_rect(x + 6, y + 12, 14, 2, fg))
+        for col_x in [x + 7, x + 12, x + 17]:
+            commands.append(_rect(col_x, y + 7, 2, 5, fg))
+        commands.append(_rect(x + 5, y + 5, 16, 2, fg))
+    else:
+        commands.append(_round_rect(x + 5, y + 8, 16, 11, 2, fg))
+        commands.append(_round_rect(x + 8, y + 11, 10, 5, 2, bg))
+        commands.append(_rect(x + 7, y + 18, 12, 2, fg))
+
+
+def _chunks(items: list, size: int) -> list[list]:
+    return [items[index : index + size] for index in range(0, len(items), size)]
+
+
+def _account_grid(commands: list[str], accounts: list, transactions, x: float, top: float, width: float, columns: int) -> None:
+    if not accounts:
+        _empty_note(commands, x, top - 80, width, "Keine Konten erfasst.")
+        return
+    gap = 14
+    card_h = 164.5 if columns == 3 else 132
+    card_w = (width - gap * (columns - 1)) / columns
+    for index, account in enumerate(accounts):
+        col = index % columns
+        row = index // columns
+        card_x = x + col * (card_w + gap)
+        card_y = top - card_h - row * (card_h + 18)
+        _account_card(commands, card_x, card_y, card_w, card_h, account, transactions)
+
+
+def _summary_card(commands: list[str], x: float, y: float, width: float, height: float, label: str, value: str, detail: str, fill: str) -> None:
+    text_color = "#ffffff" if fill == COLORS["header"] else COLORS["text"]
+    muted = "#ffffff" if fill == COLORS["header"] else COLORS["muted"]
+    commands.append(_round_rect(x, y, width, height, 6, fill))
+    if fill != COLORS["header"]:
+        commands.append(_stroke_round_rect(x, y, width, height, 6, COLORS["border"], 0.7))
+    commands.append(_text(x + 12, y + height - 22, label, 7.2, False, muted))
+    commands.append(_text(x + 12, y + 31, _clip(value, 20), 13, True, text_color))
+    if detail:
+        commands.append(_text(x + 12, y + 14, detail, 8.2, False, muted))
+
+
+def _budget_grid(commands: list[str], statuses: list, x: float, top: float, width: float) -> None:
+    if not statuses:
+        _empty_note(commands, x, top - 80, width, "Keine Budgets erfasst.")
+        return
+    gap = 14
+    columns = 2
+    card_h = 130
+    card_w = (width - gap) / columns
+    for index, status in enumerate(statuses):
+        col = index % columns
+        row = index // columns
+        card_x = x + col * (card_w + gap)
+        card_y = top - card_h - row * (card_h + 18)
+        _budget_card(commands, card_x, card_y, card_w, card_h, status)
+
+
+def _table_pages(
+    section_title: str,
+    year: int,
+    month: int,
+    show_document_title: bool,
+    headers: list[str],
+    rows: list[list[str]],
+    align_right: set[int] | None = None,
+    color_column: int | None = None,
+    pill_column: int | None = None,
+    intro: str | None = None,
+    rows_per_page: int = 28,
+) -> list[bytes]:
+    chunks = _chunks(rows, rows_per_page) or [[]]
+    pages: list[bytes] = []
+    for page_index, chunk in enumerate(chunks):
+        commands = _base_page(section_title, year, month, show_document_title and page_index == 0)
+        table_top = 670
+        if intro and page_index == 0:
+            commands.append(_text(MARGIN, 690, intro, 10, True, COLORS["text"]))
+            table_top = 660
+        if page_index > 0:
+            commands.append(_text(MARGIN, 690, f"Fortsetzung ({page_index + 1})", 10, True, COLORS["muted"]))
+        _table(
+            commands,
+            MARGIN,
+            70,
+            CONTENT_WIDTH,
+            table_top - 70,
+            headers,
+            chunk,
+            align_right=align_right,
+            color_column=color_column,
+            pill_column=pill_column,
+        )
+        pages.append(_stream(commands))
+    return pages
+
+
+def _empty_note(commands: list[str], x: float, y: float, width: float, text: str) -> None:
+    _card(commands, x, y, width, 78)
+    commands.append(_text(x + 16, y + 42, text, 10, True, COLORS["muted"]))
 
 
 def _metric_cards(commands: list[str], cards: list[tuple[str, str, str]], y: float, subtitle: str = "") -> None:
@@ -245,10 +379,26 @@ def _metric_cards(commands: list[str], cards: list[tuple[str, str, str]], y: flo
     for index, (label, value, color) in enumerate(cards):
         x = MARGIN + index * (width + gap)
         _card(commands, x, y - 64, width, 64)
+        _metric_icon(commands, x + width - 34, y - 36, label, color)
         commands.append(_text(x + 12, y - 22, label, 7.2, False, COLORS["muted"]))
-        commands.append(_text(x + 12, y - 44, _clip(value, 22), 14, True, color))
+        commands.append(_text(x + 12, y - 44, _clip(value, 18), 14, True, color))
         if subtitle:
             commands.append(_text(x + 12, y - 58, subtitle, 6.2, False, COLORS["muted"]))
+
+
+def _metric_icon(commands: list[str], x: float, y: float, label: str, color: str) -> None:
+    bg = "#dcfce7" if color == COLORS["green"] else "#fee2e2" if color == COLORS["red"] else "#dbeafe"
+    commands.append(_round_rect(x, y, 22, 22, 6, bg))
+    if "Einnahmen" in label:
+        commands.append(_line([(x + 6, y + 8), (x + 11, y + 14), (x + 16, y + 8)], color, 1.7))
+        commands.append(_line([(x + 11, y + 14), (x + 11, y + 5)], color, 1.7))
+    elif "Ausgaben" in label:
+        commands.append(_line([(x + 6, y + 14), (x + 11, y + 8), (x + 16, y + 14)], color, 1.7))
+        commands.append(_line([(x + 11, y + 8), (x + 11, y + 17)], color, 1.7))
+    else:
+        commands.append(_round_rect(x + 5, y + 6, 12, 10, 2, color))
+        commands.append(_round_rect(x + 8, y + 9, 6, 4, 1.5, bg))
+        commands.append(_rect(x + 7, y + 16, 8, 1.7, color))
 
 
 def _mini_summary(commands: list[str], x: float, y: float, width: float, height: float, label: str, value: str) -> None:
@@ -262,28 +412,41 @@ def _account_card(commands: list[str], x: float, y: float, width: float, height:
     balance = _account_balance(account, transactions)
     tx_count = sum(1 for transaction in transactions if transaction.account_id == account.id)
     tone = COLORS["green"] if balance >= 0 else COLORS["red"]
+    is_bank = account.account_type == "Bankkonto"
     _card(commands, x, y, width, height)
-    icon_color = "#dbeafe" if account.account_type == "Bankkonto" else "#fef3c7"
-    commands.append(_rect(x + 14, y + height - 38, 24, 24, icon_color))
-    commands.append(_text(x + 50, y + height - 22, _clip(account.name, 24), 9, True, COLORS["text"]))
-    commands.append(_pill(x + 50, y + height - 40, account.account_type, COLORS["blue"] if account.account_type == "Bankkonto" else "#92400e"))
-    commands.append(_text(x + 14, y + height - 72, "Aktueller Saldo", 5.8, False, COLORS["muted"]))
-    commands.append(_text(x + 14, y + height - 96, _money(balance), 13, True, tone))
-    commands.append(_line([(x + 14, y + 52), (x + width - 14, y + 52)], "#d1d5db", 0.45))
-    commands.append(_text(x + 14, y + 32, "Startsaldo", 8, False, COLORS["muted"]))
-    commands.append(_text(x + width - 74, y + 32, _money(account.starting_balance_chf), 8, True, COLORS["text"]))
-    commands.append(_text(x + 14, y + 14, "Transaktionen", 8, False, COLORS["muted"]))
-    commands.append(_text(x + width - 24, y + 14, str(tx_count), 8, True, COLORS["text"]))
+    _account_icon(commands, x + 14, y + height - 42, is_bank)
+    commands.append(_text(x + 48, y + height - 22, _clip(account.name, 20), 9, True, COLORS["text"]))
+    commands.append(_pill(x + 48, y + height - 41, account.account_type, COLORS["blue"] if is_bank else "#92400e"))
+    commands.append(_text(x + 14, y + height - 76, "Aktueller Saldo", 6.4, False, COLORS["muted"]))
+    commands.append(_text(x + 14, y + height - 103, _money(balance), 13, True, tone))
+    commands.append(_line([(x + 14, y + 58), (x + width - 14, y + 58)], "#d1d5db", 0.45))
+    commands.append(_text(x + 14, y + 39, "Startsaldo", 8, False, COLORS["muted"]))
+    commands.append(_text(x + width - 86, y + 39, _money(account.starting_balance_chf), 8, True, COLORS["text"]))
+    commands.append(_text(x + 14, y + 20, "Transaktionen", 8, False, COLORS["muted"]))
+    commands.append(_text(x + width - 26, y + 20, str(tx_count), 8, True, COLORS["text"]))
 
 
 def _budget_total_card(commands: list[str], x: float, y: float, width: float, height: float, remaining: float, expenses: float, limit: float) -> None:
     usage = expenses / limit * 100 if limit else 0
-    commands.append(_rect(x, y, width, height, COLORS["header"]))
+    tone = COLORS["green"] if remaining >= 0 else COLORS["red"]
+    commands.append(_round_rect(x, y, width, height, 6, COLORS["header"]))
     commands.append(_text(x + 10, y + height - 20, "Alle Budgets", 6.5, False, "#ffffff"))
-    commands.append(_text(x + 10, y + height - 42, _money(remaining), 14, True, "#ffffff"))
-    commands.append(_text(x + 10, y + height - 58, f"{_money(expenses)} von {_money(limit)}", 6.2, False, "#ffffff"))
-    commands.append(_rect(x + 10, y + 14, width - 20, 5, "#dbe3ef"))
-    commands.append(_rect(x + 10, y + 14, (width - 20) * min(max(usage, 0), 100) / 100, 5, COLORS["green"] if remaining >= 0 else COLORS["red"]))
+    commands.append(_text(x + 10, y + height - 43, _money(remaining), 13.2, True, "#ffffff"))
+    commands.append(_text(x + 10, y + height - 60, f"{_money(expenses)} von {_money(limit)}", 6.2, False, "#ffffff"))
+    commands.append(_round_rect(x + 10, y + 56, width - 20, 5, 2.5, "#dbe3ef"))
+    commands.append(_round_rect(x + 10, y + 56, (width - 20) * min(max(usage, 0), 100) / 100, 5, 2.5, tone))
+    third = (width - 22) / 3
+    for index, (label, value, color) in enumerate(
+        [
+            ("Budget", _money(limit, decimals=0), "#ffffff"),
+            ("Verbrauch", _money(expenses, decimals=0), "#ffffff"),
+            ("Rest", _money(remaining, decimals=0), "#ffffff"),
+        ]
+    ):
+        box_x = x + 8 + index * (third + 3)
+        commands.append(_round_rect(box_x, y + 14, third, 34, 5, "#1f2937"))
+        commands.append(_text(box_x + 5, y + 36, label, 5.7, False, "#cbd5e1"))
+        commands.append(_text(box_x + 5, y + 22, _clip(value, 9), 6.7, True, color))
 
 
 def _budget_card(commands: list[str], x: float, y: float, width: float, height: float, status) -> None:
@@ -319,20 +482,20 @@ def _category_chart(commands: list[str], x: float, y: float, width: float, heigh
         return
     total = sum(value for _, value in items) or 1
     palette = ["#5470c6", "#b6dc29", "#fb923c", "#0ea5e9", "#facc15", "#f06292", "#7e65b8"]
-    cx = x + 76
-    cy = y + 92
-    radius = 52
+    cx = x + 61
+    cy = y + 99
+    radius = 48
     start_angle = -pi / 2
     for index, (_, value) in enumerate(items):
         end_angle = start_angle + 2 * pi * value / total
-        _donut_slice(commands, cx, cy, radius, 28, start_angle, end_angle, palette[index % len(palette)])
+        _donut_slice(commands, cx, cy, radius, 26, start_angle, end_angle, palette[index % len(palette)])
         start_angle = end_angle
-    commands.append(_text(cx - 17, cy - 3, "CHF", 7, True, COLORS["muted"]))
-    legend_x = x + 150
+    legend_x = x + 118
+    max_label_chars = max(7, int((x + width - legend_x - 16) / 3.1))
     for index, (name, value) in enumerate(items):
-        row_y = y + height - 50 - index * 17
-        commands.append(_rect(legend_x, row_y, 7, 7, palette[index % len(palette)]))
-        commands.append(_text(legend_x + 11, row_y - 1, _clip(name, 13), 6.7, False, COLORS["muted"]))
+        row_y = y + height - 52 - index * 16
+        commands.append(_rect(legend_x, row_y, 6, 6, palette[index % len(palette)]))
+        commands.append(_text(legend_x + 10, row_y - 1, _clip(name, max_label_chars), 5.8, False, COLORS["muted"]))
 
 
 def _monthly_chart(commands: list[str], x: float, y: float, width: float, height: float, values: list[dict[str, float | str]]) -> None:
@@ -344,7 +507,8 @@ def _monthly_chart(commands: list[str], x: float, y: float, width: float, height
     chart_y = y + 34
     chart_h = height - 76
     chart_w = width - 58
-    max_value = max(max(float(item["income"]), float(item["expenses"])) for item in values) or 1
+    raw_max = max(max(float(item["income"]), float(item["expenses"])) for item in values) or 1
+    max_value = _nice_axis_max(raw_max)
     _grid(commands, chart_x, chart_y, chart_w, chart_h, max_value)
     group = chart_w / len(values)
     bar_w = min(12, group * 0.22)
@@ -360,18 +524,24 @@ def _monthly_chart(commands: list[str], x: float, y: float, width: float, height
 
 def _progress_chart(commands: list[str], x: float, y: float, width: float, height: float, average: list[float], current: list[float | None]) -> None:
     _panel(commands, x, y, width, height, "Ausgabenverlauf")
-    chart_x = x + 44
-    chart_y = y + 36
-    chart_w = width - 72
-    chart_h = height - 82
+    chart_x = x + 58
+    chart_y = y + 48
+    chart_w = width - 92
+    chart_h = height - 110
     values = average + [value for value in current if value is not None]
-    max_value = max(values) if values else 1
+    max_value = _nice_axis_max(max(values) if values else 1)
     _grid(commands, chart_x, chart_y, chart_w, chart_h, max_value)
-    commands.append(_line(_line_points(average, chart_x, chart_y, chart_w, chart_h, max_value), COLORS["muted"], 1.6))
-    commands.append(_line(_line_points(current, chart_x, chart_y, chart_w, chart_h, max_value), COLORS["blue"], 1.9))
-    commands.append(_text(chart_x + chart_w / 2 - 28, chart_y - 22, "Tage im Monat", 7, True, COLORS["muted"]))
-    commands.append(_text(x + 12, chart_y + chart_h / 2, "Ausgabe (CHF)", 7, True, COLORS["muted"]))
-    _legend(commands, x + 48, y + height - 34, [("Durchschnitt letzte 3 Monate", COLORS["muted"]), ("Aktueller Monat", COLORS["blue"])])
+    average_points = _line_points(average, chart_x, chart_y, chart_w, chart_h, max_value)
+    current_points = _line_points(current, chart_x, chart_y, chart_w, chart_h, max_value)
+    commands.append(_line(average_points, COLORS["muted"], 1.6))
+    commands.append(_line(current_points, COLORS["blue"], 1.9))
+    for point in average_points:
+        commands.append(_circle(point[0], point[1], 1.4, "#ffffff", COLORS["muted"], 0.8))
+    for point in current_points:
+        commands.append(_circle(point[0], point[1], 1.8, "#ffffff", COLORS["blue"], 0.9))
+    commands.append(_text(chart_x + chart_w / 2 - 28, chart_y - 24, "Tage im Monat", 7, True, COLORS["muted"]))
+    commands.append(_text_rotated(x + 20, chart_y + chart_h / 2 - 35, "Ausgabe (CHF)", 7, True, COLORS["muted"], 90))
+    _line_legend(commands, x + 48, y + height - 36, [("Durchschnitt letzte 3 Monate", COLORS["muted"]), ("Aktuelle Ausgaben", COLORS["blue"])])
 
 
 def _table(
@@ -494,8 +664,8 @@ def _page_wash(commands: list[str]) -> None:
 
 
 def _card(commands: list[str], x: float, y: float, width: float, height: float) -> None:
-    commands.append(_rect(x, y, width, height, COLORS["card"]))
-    commands.append(_stroke_rect(x, y, width, height, COLORS["border"], 0.7))
+    commands.append(_round_rect(x, y, width, height, 6, COLORS["card"]))
+    commands.append(_stroke_round_rect(x, y, width, height, 6, COLORS["border"], 0.7))
 
 
 def _pill(x: float, y: float, text: str, color: str) -> str:
@@ -503,7 +673,7 @@ def _pill(x: float, y: float, text: str, color: str) -> str:
     width = max(34, _estimated_text_width(text, 6.5) + 13)
     return "\n".join(
         [
-            _rect(x, y, width, 13, bg),
+            _round_rect(x, y, width, 13, 5, bg),
             _text(x + 5, y + 4, text, 6.5, True, color),
         ]
     )
@@ -515,6 +685,15 @@ def _grid(commands: list[str], x: float, y: float, width: float, height: float, 
         grid_y = y + height * index / 4
         commands.append(_line([(x, grid_y), (x + width, grid_y)], "#e5e7eb", 0.35))
         commands.append(_text(x - 30, grid_y - 2, _compact(max_value * index / 4), 5.7, False, COLORS["muted"]))
+
+
+def _line_legend(commands: list[str], x: float, y: float, items: list[tuple[str, str]]) -> None:
+    cursor = x
+    for label, color in items:
+        commands.append(_line([(cursor, y + 3), (cursor + 18, y + 3)], color, 1.8))
+        commands.append(_circle(cursor + 9, y + 3, 2.2, "#ffffff", color, 1.0))
+        commands.append(_text(cursor + 24, y, label, 6.5, False, COLORS["muted"]))
+        cursor += max(120, _estimated_text_width(label, 6.5) + 46)
 
 
 def _legend(commands: list[str], x: float, y: float, items: list[tuple[str, str]]) -> None:
@@ -552,6 +731,18 @@ def _money(value: float, decimals: int = 2) -> str:
     return f"{prefix}{abs(value):,.{decimals}f}".replace(",", "'")
 
 
+def _nice_axis_max(value: float) -> float:
+    if value <= 0:
+        return 1
+    rough_step = value / 4
+    magnitude = 10 ** floor(log10(rough_step))
+    for multiplier in (1, 2, 5, 10):
+        step = multiplier * magnitude
+        if step >= rough_step:
+            return step * 4
+    return rough_step * 4
+
+
 def _compact(value: float) -> str:
     return f"{value:,.0f}".replace(",", "'")
 
@@ -574,9 +765,40 @@ def _rect(x: float, y: float, width: float, height: float, color: str) -> str:
     return f"{r:.3f} {g:.3f} {b:.3f} rg {x:.1f} {y:.1f} {width:.1f} {height:.1f} re f"
 
 
+def _rounded_rect_path(x: float, y: float, width: float, height: float, radius: float) -> str:
+    r = min(radius, width / 2, height / 2)
+    c = r * 0.5522847498
+    x0, y0 = x, y
+    x1, y1 = x + width, y + height
+    return " ".join(
+        [
+            f"{x0 + r:.1f} {y0:.1f} m",
+            f"{x1 - r:.1f} {y0:.1f} l",
+            f"{x1 - r + c:.1f} {y0:.1f} {x1:.1f} {y0 + r - c:.1f} {x1:.1f} {y0 + r:.1f} c",
+            f"{x1:.1f} {y1 - r:.1f} l",
+            f"{x1:.1f} {y1 - r + c:.1f} {x1 - r + c:.1f} {y1:.1f} {x1 - r:.1f} {y1:.1f} c",
+            f"{x0 + r:.1f} {y1:.1f} l",
+            f"{x0 + r - c:.1f} {y1:.1f} {x0:.1f} {y1 - r + c:.1f} {x0:.1f} {y1 - r:.1f} c",
+            f"{x0:.1f} {y0 + r:.1f} l",
+            f"{x0:.1f} {y0 + r - c:.1f} {x0 + r - c:.1f} {y0:.1f} {x0 + r:.1f} {y0:.1f} c",
+            "h",
+        ]
+    )
+
+
+def _round_rect(x: float, y: float, width: float, height: float, radius: float, color: str) -> str:
+    r, g, b = _hex_to_rgb(color)
+    return f"{r:.3f} {g:.3f} {b:.3f} rg {_rounded_rect_path(x, y, width, height, radius)} f"
+
+
 def _stroke_rect(x: float, y: float, width: float, height: float, color: str, line_width: float) -> str:
     r, g, b = _hex_to_rgb(color)
     return f"{r:.3f} {g:.3f} {b:.3f} RG {line_width:.1f} w {x:.1f} {y:.1f} {width:.1f} {height:.1f} re S"
+
+
+def _stroke_round_rect(x: float, y: float, width: float, height: float, radius: float, color: str, line_width: float) -> str:
+    r, g, b = _hex_to_rgb(color)
+    return f"{r:.3f} {g:.3f} {b:.3f} RG {line_width:.1f} w {_rounded_rect_path(x, y, width, height, radius)} S"
 
 
 def _line(points: list[tuple[float, float]], color: str, line_width: float) -> str:
@@ -587,6 +809,25 @@ def _line(points: list[tuple[float, float]], color: str, line_width: float) -> s
     segments = [f"{first_x:.1f} {first_y:.1f} m"]
     segments.extend(f"{point_x:.1f} {point_y:.1f} l" for point_x, point_y in points[1:])
     return f"{r:.3f} {g:.3f} {b:.3f} RG {line_width:.1f} w {' '.join(segments)} S"
+
+
+def _circle(x: float, y: float, radius: float, fill_color: str, stroke_color: str | None = None, line_width: float = 0.7) -> str:
+    fill_r, fill_g, fill_b = _hex_to_rgb(fill_color)
+    c = radius * 0.5522847498
+    path = " ".join(
+        [
+            f"{x + radius:.1f} {y:.1f} m",
+            f"{x + radius:.1f} {y + c:.1f} {x + c:.1f} {y + radius:.1f} {x:.1f} {y + radius:.1f} c",
+            f"{x - c:.1f} {y + radius:.1f} {x - radius:.1f} {y + c:.1f} {x - radius:.1f} {y:.1f} c",
+            f"{x - radius:.1f} {y - c:.1f} {x - c:.1f} {y - radius:.1f} {x:.1f} {y - radius:.1f} c",
+            f"{x + c:.1f} {y - radius:.1f} {x + radius:.1f} {y - c:.1f} {x + radius:.1f} {y:.1f} c",
+            "h",
+        ]
+    )
+    if stroke_color:
+        stroke_r, stroke_g, stroke_b = _hex_to_rgb(stroke_color)
+        return f"{fill_r:.3f} {fill_g:.3f} {fill_b:.3f} rg {stroke_r:.3f} {stroke_g:.3f} {stroke_b:.3f} RG {line_width:.1f} w {path} B"
+    return f"{fill_r:.3f} {fill_g:.3f} {fill_b:.3f} rg {path} f"
 
 
 def _polygon(points: list[tuple[float, float]], color: str) -> str:
@@ -605,6 +846,18 @@ def _text(x: float, y: float, text: str, size: float, bold: bool, color: str) ->
     return f"{r:.3f} {g:.3f} {b:.3f} rg BT /{font} {size:.1f} Tf {x:.1f} {y:.1f} Td ({_escape(text)}) Tj ET"
 
 
+def _text_rotated(x: float, y: float, text: str, size: float, bold: bool, color: str, angle: int) -> str:
+    font = "F2" if bold else "F1"
+    r, g, b = _hex_to_rgb(color)
+    if angle == 90:
+        matrix = f"0 1 -1 0 {x:.1f} {y:.1f}"
+    elif angle == -90:
+        matrix = f"0 -1 1 0 {x:.1f} {y:.1f}"
+    else:
+        matrix = f"1 0 0 1 {x:.1f} {y:.1f}"
+    return f"{r:.3f} {g:.3f} {b:.3f} rg BT /{font} {size:.1f} Tf {matrix} Tm ({_escape(text)}) Tj ET"
+
+
 def _escape(text: str) -> str:
     cleaned = text.encode("latin-1", "replace").decode("latin-1")
     return cleaned.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
@@ -616,7 +869,7 @@ def _stream(commands: list[str]) -> bytes:
 
 def _build_pdf(page_streams: list[bytes]) -> bytes:
     objects: list[bytes | None] = [None]
-    objects.extend([b"", b"", b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>", b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"])
+    objects.extend([b"", b"", b"<< /Type /Font /Subtype /TrueType /BaseFont /SegoeUI /Encoding /WinAnsiEncoding >>", b"<< /Type /Font /Subtype /TrueType /BaseFont /SegoeUI-Bold /Encoding /WinAnsiEncoding >>"])
     page_ids = []
     for stream in page_streams:
         objects.append(b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream")

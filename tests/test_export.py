@@ -64,6 +64,18 @@ def test_pdf_export_uses_one_page_per_selected_area():
     assert _pdf_page_count(mixed_pdf) == 2
 
 
+def test_pdf_export_paginates_accounts_when_many_exist():
+    app = BudgetPlannerApplication(database=Database(database_url="sqlite:///:memory:"))
+    controller = app.finance_controller
+
+    for index in range(12):
+        controller.create_account(f"Zusatzkonto {index + 1}", "Bankkonto", 1000 + index)
+
+    accounts_pdf = export_selected_data_pdf(controller, ["accounts"], 2026, 5)
+
+    assert _pdf_page_count(accounts_pdf) > 1
+
+
 def test_selected_export_areas_validates_empty_and_all_selection():
     assert _selected_export_areas(overview=False, accounts=False, categories=False, budgets=False, transactions=False, all_selected=False) == []
     assert _selected_export_areas(overview=False, accounts=False, categories=False, budgets=False, transactions=False, all_selected=True) == [
