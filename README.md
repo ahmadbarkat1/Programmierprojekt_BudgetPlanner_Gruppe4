@@ -40,8 +40,10 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 
 - [User Stories, Datentypen, Eingaben und erwartete Ausgaben](docs/user_stories.md)
 - [Architektur](docs/architecture.md)
-- [Klassendiagramm](<docs/budgetplanner klassendiagram.png>)
+- [Klassendiagramm](docs/klassendiagramm.png)
 - [Test Cases](docs/testcases.md)
+- [Wireframe](docs/wireframe.png)
+- Figma-Screens: [Home](docs/figma_1_home.png), [Transaktionen](docs/figma_2_transaktion.png), [Kategorien](docs/figma_3_kategorien.png), [Konten](docs/figma_4_konten.png), [Budget](docs/figma_5_budget.png)
 - Diagramme: Klassendiagramm und ER-Modell im Ordner `docs/`
 
 ---
@@ -64,6 +66,28 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 - PDF-Export als strukturierter Monatsbericht
 - Darkmode und Hilfe-Dialog in der Oberfläche
 - Speicherung in SQLite über SQLModel ORM
+
+---
+
+## 🖼 Screens und Navigation
+
+Für die Umsetzung wurden die fokussierten Screens [Home](docs/figma_1_home.png), [Transaktionen](docs/figma_2_transaktion.png), [Kategorien](docs/figma_3_kategorien.png), [Konten](docs/figma_4_konten.png) und [Budget](docs/figma_5_budget.png) ausgewählt. Das [Wireframe](docs/wireframe.png) zeigt die grobe Navigation und Struktur der Anwendung. Die finalen Screens wurden in Figma erstellt und bilden die wichtigsten Benutzerabläufe des Budgetplanners ab.
+
+### Wireframe
+
+![Wireframe](docs/wireframe.png)
+
+### Figma-Screens
+
+![Home Screen](docs/figma_1_home.png)
+
+![Transaktionen Screen](docs/figma_2_transaktion.png)
+
+![Kategorien Screen](docs/figma_3_kategorien.png)
+
+![Konten Screen](docs/figma_4_konten.png)
+
+![Budget Screen](docs/figma_5_budget.png)
 
 ---
 
@@ -105,6 +129,12 @@ Die Verantwortlichkeiten sind klar getrennt:
 
 ---
 
+## 🧠 Ausgewählte Design Patterns
+
+Für unser Projekt passen vor allem `Strategy`, `Facade`, `DAO` und eine MVC-ähnliche Schichtenarchitektur. `Strategy` verwenden wir für wiederkehrende Transaktionen, `Facade` für die Datenbank-Kapselung, `DAO` für Datenbankzugriffe und MVC, um UI, Controller, Services und Datenmodell sauber zu trennen. Diese Patterns wurden gewählt, weil sie die Wartbarkeit verbessern, ohne das Projekt unnötig komplex zu machen.
+
+---
+
 ## 🗃 Datenmodell
 
 ```text
@@ -120,6 +150,14 @@ Einnahmen und Ausgaben werden bewusst nicht als separate Unterklassen modelliert
 Beide besitzen dieselben Attribute. Der Unterschied wird über `transaction_type` (`income` oder `expense`) abgebildet.
 
 Aktuell verwendet die App einen Default User. Das Modell ist aber bereits so aufgebaut, dass mehrere Benutzer später ergänzt werden könnten.
+
+### Klassendiagramm
+
+![Klassendiagramm](docs/klassendiagramm.png)
+
+### ER-Modell
+
+![ER-Modell](docs/er_modell.png)
 
 ---
 

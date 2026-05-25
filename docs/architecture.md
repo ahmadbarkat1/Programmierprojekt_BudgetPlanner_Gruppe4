@@ -149,7 +149,7 @@ Jede Entität im ER-Modell entspricht einer Klasse im Code:
 
 Das aktuelle Klassendiagramm ist hier dokumentiert:
 
-- [Klassendiagramm](<budgetplanner klassendiagram.png>)
+- [Klassendiagramm](klassendiagramm.png)
 
 Die Beziehungen aus dem ER-Modell wurden wie folgt umgesetzt:
 
