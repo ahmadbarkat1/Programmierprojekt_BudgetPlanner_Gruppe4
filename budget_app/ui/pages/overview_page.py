@@ -314,7 +314,9 @@ def register_overview_page(controller: FinanceController) -> None:
                             envelope_card(status)
 
             with ui.card().classes("bp-card w-full p-6"):
-                ui.label("Letzte Transaktionen im aktuellen Monat").classes("bp-section-title mb-4")
+                with ui.row().classes("w-full items-center justify-between gap-4 mb-4"):
+                    ui.label("Letzte Transaktionen im aktuellen Monat").classes("bp-section-title")
+                    ui.button("Transaktion erfassen", icon="sync_alt", on_click=lambda: ui.navigate.to("/transactions")).classes("bp-secondary-btn")
                 sorted_transactions = sorted(data.transactions, key=lambda item: (item.transaction_date, item.id or 0), reverse=True)
                 transaction_table(
                     sorted_transactions[:10],
