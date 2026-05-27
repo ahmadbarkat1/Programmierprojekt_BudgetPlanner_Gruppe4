@@ -25,11 +25,9 @@ Der Budgetplanner ist nach dem Enveloppe-System konzipiert: Für jede Ausgabenka
 | ↳ [Wireframe](#wireframe-ansicht) | Wireframe der Navigation |
 | ↳ [Figma-Screens](#figma-screens-ansicht) | Übersicht, Transaktionen, Kategorien, Konten und Budget |
 | [Hauptfunktionen](#hauptfunktionen) | Überblick über die umgesetzten Funktionen |
-| [Screens und Navigation](#screens-und-navigation) | Wireframe und Figma-Screens |
 | [Architektur im README](#architektur) | Kurzbeschreibung des Schichtenmodells |
 | [OOP- und Python-Konzepte](#oop-und-python-konzepte) | Eingesetzte OOP-/Python-Konzepte |
 | [Design Patterns](#design-patterns) | Passende Design Patterns des Projekts |
-| [UML-Diagramme](#uml-diagramme) | Kurze Einordnung von Klassendiagramm und ER-Modell |
 | [Projektstruktur](#projektstruktur) | Ordner- und Dateiaufbau |
 | [Installation](#installation) | Lokales Setup |
 | [Start](#start) | Anwendung starten |
@@ -90,11 +88,15 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 
 ### Klassendiagramm
 
+Das Klassendiagramm zeigt die zentralen Domänenklassen `User`, `Account`, `Category`, `Transaction` und `Budget`. Einnahmen und Ausgaben werden nicht als separate Unterklassen modelliert, sondern über `transaction_type` (`income` oder `expense`) unterschieden.
+
 ![Klassendiagramm](docs/klassendiagramm.png)
 
 <a id="er-modell-ansicht"></a>
 
 ### ER-Modell
+
+Das ER-Modell bildet dieselben Kernentitäten wie der Code ab. Die Beziehungen werden in SQLModel über Foreign Keys und `Relationship(back_populates=...)` umgesetzt.
 
 ![ER-Modell](docs/er_modell.png)
 
@@ -102,11 +104,15 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 
 ### Wireframe
 
+Das Wireframe zeigt die grobe Navigation und Struktur der Anwendung.
+
 ![Wireframe](docs/wireframe.png)
 
 <a id="figma-screens-ansicht"></a>
 
 ### Figma-Screens
+
+Für die Umsetzung wurden die fokussierten Screens Übersicht, Transaktionen, Kategorien, Konten und Budget ausgewählt. Die finalen Figma-Screens bilden die wichtigsten Benutzerabläufe des Budgetplanners ab.
 
 ![Übersicht Screen](docs/figma_1_home.png)
 
@@ -143,14 +149,6 @@ Der Budgetplanner bietet eine einfache und strukturierte Lösung:
 
 ---
 
-<a id="screens-und-navigation"></a>
-
-## 🖼 Screens und Navigation
-
-Für die Umsetzung wurden die fokussierten Screens [Übersicht](docs/figma_1_home.png), [Transaktionen](docs/figma_2_transaktion.png), [Kategorien](docs/figma_3_kategorien.png), [Konten](docs/figma_4_konten.png) und [Budget](docs/figma_5_budget.png) ausgewählt. Das [Wireframe](docs/wireframe.png) zeigt die grobe Navigation und Struktur der Anwendung. Die finalen Screens wurden in Figma erstellt und bilden die wichtigsten Benutzerabläufe des Budgetplanners ab.
-
----
-
 <a id="architektur"></a>
 
 ## 🧱 Architektur
@@ -184,14 +182,6 @@ Die detaillierten Verantwortlichkeiten, ORM-Mappings und Modellentscheidungen si
 ## 🧠 Design Patterns
 
 Wir haben für unser Projekt `Strategy`, `Facade`, `DAO` und eine MVC-ähnliche Schichtenarchitektur gewählt. `Strategy` verwenden wir für wiederkehrende Transaktionen, `Facade` für die Datenbank-Kapselung, `DAO` für Datenbankzugriffe und MVC, um UI, Controller, Services und Datenmodell sauber zu trennen. Diese Patterns wurden gewählt, weil sie die Wartbarkeit verbessern, ohne das Projekt unnötig komplex zu machen.
-
----
-
-<a id="uml-diagramme"></a>
-
-## 🗃 UML-Diagramme
-
-Das Datenmodell besteht aus `User`, `Account`, `Category`, `Transaction` und `Budget`. Einnahmen und Ausgaben werden nicht als separate Unterklassen modelliert, sondern über `transaction_type` (`income` oder `expense`) unterschieden. Die vollständigen Datentypen, Beziehungen und ORM-Mappings stehen in [User Stories](docs/user_stories.md) und [Architektur](docs/architecture.md).
 
 ---
 
