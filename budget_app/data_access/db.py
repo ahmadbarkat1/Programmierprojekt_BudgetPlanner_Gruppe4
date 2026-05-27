@@ -15,7 +15,6 @@ from typing import Iterator, Optional
 from sqlalchemy.engine import Engine
 from sqlmodel import SQLModel, Session, create_engine, select
 
-from ..data_access.seed import BudgetSeeder
 from ..domain.models import User
 
 
@@ -40,15 +39,13 @@ class Database:
         return self._engine
 
     def init_schema_and_seed(self) -> None:
-        """Create tables and seed demo data if the database is empty."""
+        """Create tables and ensure the default user exists without demo data."""
         SQLModel.metadata.create_all(self._engine)
         with Session(self._engine) as session:
             user = session.exec(select(User).order_by(User.id)).first()
-            seeder = BudgetSeeder()
             if user is None:
-                seeder.seed(session)
-            else:
-                seeder.seed_demo_activity(session, user)
+                session.add(User(name="Demo User", email="demo@example.com"))
+                session.commit()
 
     @contextmanager
     def session_scope(self) -> Iterator[Session]:
